@@ -5,9 +5,8 @@
 #ifndef mulle_quadtree_h__
 #define mulle_quadtree_h__
 
-#import "import.h" 
+#include "include.h"
 
-#include "CGGeometry.h"
 #include <stdio.h>
 
 
@@ -17,15 +16,15 @@ struct mulle_quadtree;
 typedef void (*mulle_quadtree_callback)( CGRect rect, void* payload, void* context);
 
 /**
- Creates the quadtree. Note that you must manually release the tree using 
+ Creates the quadtree. Note that you must manually release the tree using
  mulle_quadtree_done().
- 
+
  Operations on the quadtree are not thread-safe.
 
  @param rect
         The bounding box. Origin can be negative.
  @param max_levels
-        Maximum number of levels. If maximum level is reached, the nodes are not split anymore 
+        Maximum number of levels. If maximum level is reached, the nodes are not split anymore
         and points are added to the node at the last level, ignoring max_points_per_node.
  @param max_points_per_node
         Maximum number of points to store in a single node. After this many points are added to
@@ -38,30 +37,30 @@ struct mulle_quadtree* mulle_quadtree_create( CGRect rect,
                                               struct mulle_allocator *allocator);
 
 /** Reset the quadtree with a new rectangle, keeps memory for reuse. */
-void   mulle_quadtree_reset( struct mulle_quadtree* tree, 
+void   mulle_quadtree_reset( struct mulle_quadtree* tree,
                              CGRect world_rect);
 
 /** Frees the quadtree, freeing up all memory. */
 void mulle_quadtree_destroy( struct mulle_quadtree * tree);
 
-/** Inserts a point and an associated payload into the quadtree. 
-    You are responsible for making sure that payload reference remains valid 
+/** Inserts a point and an associated payload into the quadtree.
+    You are responsible for making sure that payload reference remains valid
     during the tree lifecycle.
     No check for duplicates is performed.
     Returns 0, if rect does not intersect the quadtree and is therefore not
                added. 1 otherwise.
 */
-int   mulle_quadtree_insert( struct mulle_quadtree* tree, 
-                             CGRect rect, 
+int   mulle_quadtree_insert( struct mulle_quadtree* tree,
+                             CGRect rect,
                              void *payload);
 
 /** Change payload of a point with the matching coordinates and payload from the quadtree.
-    Point is identified by coordinates and the payload. This is different to 
+    Point is identified by coordinates and the payload. This is different to
     mulle_quadtree_remove_payload
     @return Number of points changed.
  */
-unsigned int   mulle_quadtree_change_payload( struct mulle_quadtree* tree, 
-                                              CGRect rect, 
+unsigned int   mulle_quadtree_change_payload( struct mulle_quadtree* tree,
+                                              CGRect rect,
                                               void *payload,
                                               void *newpayload);
 
@@ -70,33 +69,33 @@ unsigned int   mulle_quadtree_change_payload( struct mulle_quadtree* tree,
     to be removed.
     @return Number of rectangles removed.
  */
-unsigned int mulle_quadtree_remove_payload( struct mulle_quadtree* tree, 
-                                            CGRect rect, 
+unsigned int mulle_quadtree_remove_payload( struct mulle_quadtree* tree,
+                                            CGRect rect,
                                             void* payload);
 
-/** Searches for a point inside the rectangles. Calls supplied callback for 
+/** Searches for a point inside the rectangles. Calls supplied callback for
     every matched rectangle.
     @return Number of rectangles found.
  */
-unsigned int   mulle_quadtree_find_point( struct mulle_quadtree* tree, 
+unsigned int   mulle_quadtree_find_point( struct mulle_quadtree* tree,
                                           CGPoint point,
-                                          mulle_quadtree_callback callback, 
+                                          mulle_quadtree_callback callback,
                                           void *context);
 
-/** Searches for a rect inside the rectangles. Calls supplied callback for 
+/** Searches for a rect inside the rectangles. Calls supplied callback for
     every rectangle that intersects .
     @return Number of rectangles found.
  */
-unsigned int   mulle_quadtree_find_intersecting_rect( struct mulle_quadtree* tree, 
+unsigned int   mulle_quadtree_find_intersecting_rect( struct mulle_quadtree* tree,
                                                       CGRect rect,
-                                                      mulle_quadtree_callback callback, 
+                                                      mulle_quadtree_callback callback,
                                                       void *context);
 
 /** Visits all rectangles in the tree.
     @return Total number of rectangles currently stored in the tree.
  */
-unsigned int mulle_quadtree_walk( struct mulle_quadtree* tree, 
-                                  mulle_quadtree_callback callback, 
+unsigned int mulle_quadtree_walk( struct mulle_quadtree* tree,
+                                  mulle_quadtree_callback callback,
                                   void* context);
 
 
@@ -104,7 +103,7 @@ unsigned int mulle_quadtree_walk( struct mulle_quadtree* tree,
 /*
  * dump tree structure
  */
-void   mulle_quadtree_dump( struct mulle_quadtree *tree, FILE *fp); 
+void   mulle_quadtree_dump( struct mulle_quadtree *tree, FILE *fp);
 
 
 #endif

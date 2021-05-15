@@ -1,4 +1,2 @@
-# These get installed. The envelope header includes them directly.
+# these are installed and the envelope header includes them directly
 include.h
-import.h
-

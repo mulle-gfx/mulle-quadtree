@@ -4,17 +4,20 @@
 #include "mulle-quadtree.h"
 
 #include <stdlib.h>
+#include <string.h>
+
+#include "include-private.h"
 
 
 // A linked list element storing a point and the reference to associated payload
-struct _mulle_quadtree_data 
+struct _mulle_quadtree_data
 {
     struct _mulle_quadtree_data  *next;         // also used by recycling
     CGRect                       rect;
     void                         *payload;
 };
 
-struct _mulle_quadtree_node 
+struct _mulle_quadtree_node
 {                                                // subnodes[0] also used by recycling
     struct _mulle_quadtree_node   *subnodes[4];  // 0=NW,1=NE,2=SW,3=SE quadrants
     CGRect                        rect;          // Bounding box
@@ -23,7 +26,7 @@ struct _mulle_quadtree_node
     unsigned int                  level;         // This node's level in the tree
 };
 
-struct mulle_quadtree 
+struct mulle_quadtree
 {
    struct _mulle_quadtree_node  *root_node;
    struct mulle_allocator       *allocator;
@@ -32,15 +35,15 @@ struct mulle_quadtree
 
    /* recycling area */
    struct _mulle_quadtree_node  *freed_nodes;
-   struct _mulle_quadtree_data  *freed_datas; 
+   struct _mulle_quadtree_data  *freed_datas;
 };
 
 
 
 static inline void
    _mulle_quadtree_node_init( struct _mulle_quadtree_node *n,
-                              CGRect rect, 
-                              unsigned int level) 
+                              CGRect rect,
+                              unsigned int level)
 {
    memset( n, 0, sizeof( *n));
    n->rect  = rect;
@@ -49,8 +52,8 @@ static inline void
 
 
 struct _mulle_quadtree_node   *_mulle_quadtree_create_node( struct mulle_quadtree *tree,
-                                                            CGRect rect, 
-                                                            unsigned int level) 
+                                                            CGRect rect,
+                                                            unsigned int level)
 {
    struct _mulle_quadtree_node   *n;
 
@@ -83,13 +86,13 @@ static inline void   _mulle_quadtree_destroy_node( struct mulle_quadtree *tree,
 /***/
 
 static inline void
-   _mulle_quadtree_data_init( struct _mulle_quadtree_data *d) 
+   _mulle_quadtree_data_init( struct _mulle_quadtree_data *d)
 {
    memset( d, 0, sizeof( *d));
 }
 
 
-struct _mulle_quadtree_data   *_mulle_quadtree_create_data( struct mulle_quadtree *tree) 
+struct _mulle_quadtree_data   *_mulle_quadtree_create_data( struct mulle_quadtree *tree)
 {
    struct _mulle_quadtree_data   *d;
 
@@ -119,21 +122,21 @@ static void   _mulle_quadtree_destroy_data( struct mulle_quadtree *tree,
 
 /***/
 
-static unsigned int 
-   _mulle_quadtree_node_change_payload( struct _mulle_quadtree_node* node, 
-                                        CGRect rect, 
+static unsigned int
+   _mulle_quadtree_node_change_payload( struct _mulle_quadtree_node* node,
+                                        CGRect rect,
                                         void* payload,
-                                        void* newpayload) 
+                                        void* newpayload)
 {
    unsigned int                  count;
    unsigned int                  i;
    struct _mulle_quadtree_data   *data;
    struct _mulle_quadtree_data   *prev_data;
    struct _mulle_quadtree_node   *subnode;
-   
+
    count = 0;
 
-   if( node->subnodes[0]) 
+   if( node->subnodes[0])
    {
       for( i = 0; i < 4; i++)
       {
@@ -142,13 +145,13 @@ static unsigned int
             count += _mulle_quadtree_node_change_payload( subnode, rect, payload, newpayload);
       }
       return( count);
-   } 
+   }
 
    data  = node->data;
 
-   while( data) 
+   while( data)
    {
-      if( data->payload == payload && CGRectIntersectsRect( data->rect, rect)) 
+      if( data->payload == payload && CGRectIntersectsRect( data->rect, rect))
       {
           // Payload and point matches, change this entry
           count++;
@@ -160,11 +163,11 @@ static unsigned int
    return count;
 }
 
-static unsigned int 
-   _mulle_quadtree_node_remove_payload( struct _mulle_quadtree_node* node, 
-                                        CGRect rect, 
+static unsigned int
+   _mulle_quadtree_node_remove_payload( struct _mulle_quadtree_node* node,
+                                        CGRect rect,
                                         void* payload,
-                                        struct mulle_quadtree *tree) 
+                                        struct mulle_quadtree *tree)
 {
    unsigned int                    count;
    struct _mulle_quadtree_data   *data;
@@ -174,7 +177,7 @@ static unsigned int
 
    count = 0;
 
-   if( node->subnodes[0]) 
+   if( node->subnodes[0])
    {
       for( i = 0; i < 4; i++)
       {
@@ -183,31 +186,31 @@ static unsigned int
             count += _mulle_quadtree_node_remove_payload( subnode, rect, payload, tree);
       }
       return( count);
-   } 
+   }
 
    data      = node->data;
    prev_data = NULL;
 
-   while( data) 
+   while( data)
    {
-      if( data->payload == payload) 
+      if( data->payload == payload)
       {
           // Payload matches, remove this entry
           count++;
           node->data_count--;
-          if (prev_data) 
+          if (prev_data)
           {
               prev_data->next = data->next;
               _mulle_quadtree_recycle_data( tree, data);
               data = prev_data->next;
-          } 
-          else 
+          }
+          else
           {
               node->data = data->next;
               _mulle_quadtree_recycle_data( tree, data);
               data = node->data;
           }
-      } 
+      }
       else
       {
           prev_data = data;
@@ -218,13 +221,13 @@ static unsigned int
     return count;
 }
 
-static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree, 
-                                         struct _mulle_quadtree_node* node, 
-                                         CGRect rect, 
+static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
+                                         struct _mulle_quadtree_node* node,
+                                         CGRect rect,
                                          void* payload);
 
 
-static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree, 
+static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree,
                                          struct _mulle_quadtree_node* node)
 {
    CGSize                        subnode_rect_size;
@@ -234,10 +237,10 @@ static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree,
    struct _mulle_quadtree_node   *subnode;
    unsigned int                    i;
 
-   subnode_rect_size = CGSizeMake( node->rect.size.width / 2.0, 
+   subnode_rect_size = CGSizeMake( node->rect.size.width / 2.0,
                                    node->rect.size.height / 2.0);
 
-   for( i = 0; i < 4; i++) 
+   for( i = 0; i < 4; i++)
    {
        subnode_rect = CGRectMake( node->rect.origin.x + ((i % 2 == 1) ? subnode_rect_size.width : 0),
                                   node->rect.origin.y + ((i >= 2) ? subnode_rect_size.height : 0),
@@ -250,7 +253,7 @@ static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree,
    data       = node->data;
    node->data = NULL;
 
-   while( data) 
+   while( data)
    {
       next = data->next;
 
@@ -259,7 +262,7 @@ static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree,
          subnode = node->subnodes[ i];
          if( CGRectIntersectsRect( data->rect, subnode->rect))
             _mulle_quadtree_node_insert( tree, subnode, data->rect, data->payload);
-      } 
+      }
 
       // remove from our tree
       _mulle_quadtree_recycle_data( tree, data);
@@ -268,16 +271,16 @@ static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree,
    }
 }
 
-// 
+//
 // The incoming rectangle is clipped against the quadtree and every part
 // is placed into the appropriate node
 //
-static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree, 
-                                         struct _mulle_quadtree_node* node, 
-                                         CGRect rect, 
-                                         void  *payload) 
+static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
+                                         struct _mulle_quadtree_node* node,
+                                         CGRect rect,
+                                         void  *payload)
 {
-   struct _mulle_quadtree_data   *new_data; 
+   struct _mulle_quadtree_data   *new_data;
    struct _mulle_quadtree_data   *data;
    struct _mulle_quadtree_data   *next;
    struct _mulle_quadtree_data   *prev;
@@ -291,7 +294,7 @@ static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
    assert( node);
 
    workDone = 0;
-   if( node->subnodes[ 0]) 
+   if( node->subnodes[ 0])
    {
       for( i = 0; i < 4; i++)
       {
@@ -317,7 +320,7 @@ static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
    new_data->rect    = intersection;
    new_data->payload = payload;
    new_data->next    = NULL;
-   if( node->data) 
+   if( node->data)
    {
 //      assert(node->data_count > 0);
       new_data->next = node->data;
@@ -325,46 +328,46 @@ static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
    node->data = new_data;
    node->data_count++;
 
-   // If maximum number of points reached AND below max level and not split yet: 
+   // If maximum number of points reached AND below max level and not split yet:
    // split this node
-   if( node->level < tree->max_levels && 
-       node->data_count > tree->max_rects_per_node && 
-       ! node->subnodes[0]) 
+   if( node->level < tree->max_levels &&
+       node->data_count > tree->max_rects_per_node &&
+       ! node->subnodes[0])
    {
       _mulle_quadtree_split_node( tree, node);
    }
    return( 1);
 }
 
-static unsigned int 
-   _mulle_quadtree_node_find_point( struct _mulle_quadtree_node* node, 
-                                    CGPoint point, 
-                                    mulle_quadtree_callback callback, 
-                                    void* context) 
+static unsigned int
+   _mulle_quadtree_node_find_point( struct _mulle_quadtree_node* node,
+                                    CGPoint point,
+                                    mulle_quadtree_callback callback,
+                                    void* context)
 {
    unsigned int                   count;
    unsigned int                   i;
    struct _mulle_quadtree_data  *data;
 
    count = 0;
-   if( node->subnodes[ 0]) 
+   if( node->subnodes[ 0])
    {
       assert( ! node->data);
 
-      for( i = 0; i < 4; i++) 
-         if( CGRectContainsPoint( node->subnodes[i]->rect, point)) 
+      for( i = 0; i < 4; i++)
+         if( CGRectContainsPoint( node->subnodes[i]->rect, point))
             count += _mulle_quadtree_node_find_point( node->subnodes[i], point, callback, context);
       return( count);
    }
 
    // Leaf node
    data = node->data;
-   while( data) 
+   while( data)
    {
-      if( CGRectContainsPoint( data->rect, point)) 
+      if( CGRectContainsPoint( data->rect, point))
       {
          count++;
-         if (callback) 
+         if (callback)
             (*callback)( data->rect, data->payload, context);
       }
       data = data->next;
@@ -373,35 +376,35 @@ static unsigned int
 }
 
 
-static unsigned int 
-   _mulle_quadtree_node_find_intersecting_rect( struct _mulle_quadtree_node* node, 
-                                                CGRect rect, 
-                                                mulle_quadtree_callback callback, 
-                                                void* context) 
+static unsigned int
+   _mulle_quadtree_node_find_intersecting_rect( struct _mulle_quadtree_node* node,
+                                                CGRect rect,
+                                                mulle_quadtree_callback callback,
+                                                void* context)
 {
    unsigned int                   count;
    unsigned int                   i;
    struct _mulle_quadtree_data  *data;
 
    count = 0;
-   if( node->subnodes[ 0]) 
+   if( node->subnodes[ 0])
    {
       assert( ! node->data);
 
-      for( i = 0; i < 4; i++) 
-         if( CGRectIntersectsRect( node->subnodes[i]->rect, rect)) 
+      for( i = 0; i < 4; i++)
+         if( CGRectIntersectsRect( node->subnodes[i]->rect, rect))
             count += _mulle_quadtree_node_find_intersecting_rect( node->subnodes[i], rect, callback, context);
       return( count);
    }
 
    // Leaf node
    data = node->data;
-   while( data) 
+   while( data)
    {
-      if( CGRectIntersectsRect( data->rect, rect)) 
+      if( CGRectIntersectsRect( data->rect, rect))
       {
          count++;
-         if (callback) 
+         if (callback)
             (*callback)( data->rect, data->payload, context);
       }
       data = data->next;
@@ -410,30 +413,30 @@ static unsigned int
 }
 
 
-static unsigned int 
-   _mulle_quadtree_node_walk( struct _mulle_quadtree_node* node, 
-                              mulle_quadtree_callback callback, 
-                              void* context) 
+static unsigned int
+   _mulle_quadtree_node_walk( struct _mulle_quadtree_node* node,
+                              mulle_quadtree_callback callback,
+                              void* context)
 {
    unsigned int                    count;
    struct _mulle_quadtree_data   *data;
    unsigned int                    i;
 
    count = 0;
-   if( node->subnodes[0]) 
+   if( node->subnodes[0])
    {
       assert( ! node->data);
 
-      for( i = 0; i < 4; i++) 
+      for( i = 0; i < 4; i++)
          count += _mulle_quadtree_node_walk( node->subnodes[ i], callback, context);
       return( count);
-   } 
+   }
 
    data = node->data;
-   while(data) 
+   while(data)
    {
       count++;
-      if (callback) 
+      if (callback)
          (*callback)( data->rect, data->payload, context);
       data = data->next;
    }
@@ -442,39 +445,39 @@ static unsigned int
 }
 
 
-static void 
-   _mulle_quadtree_node_dump( struct _mulle_quadtree_node *node, 
-                              FILE *fp, 
+static void
+   _mulle_quadtree_node_dump( struct _mulle_quadtree_node *node,
+                              FILE *fp,
                               unsigned int level,
-                              unsigned int quadrant) 
+                              unsigned int quadrant)
 {
    struct _mulle_quadtree_data   *data;
    unsigned int                    i;
 
    for( i = 0; i < level; i++)
       fputc( ' ', fp);
-   fprintf( fp, "%u/%u: %.2f %.2f %.2f %.2f\n", 
+   fprintf( fp, "%u/%u: %.2f %.2f %.2f %.2f\n",
                     level, quadrant,
                      node->rect.origin.x,
                      node->rect.origin.y,
                      node->rect.size.width,
                      node->rect.size.height);
 
-   if( node->subnodes[0]) 
+   if( node->subnodes[0])
    {
       assert( ! node->data);
 
-      for( i = 0; i < 4; i++) 
+      for( i = 0; i < 4; i++)
         _mulle_quadtree_node_dump( node->subnodes[ i], fp, level + 1, i);
       return;
-   } 
+   }
 
    data = node->data;
-   while(data) 
+   while(data)
    {
       for( i = 0; i <= level; i++)
          fputc( ' ', fp);
-      fprintf( fp, "[%.2f %.2f %.2f %.2f = %p]\n", 
+      fprintf( fp, "[%.2f %.2f %.2f %.2f = %p]\n",
                      data->rect.origin.x,
                      data->rect.origin.y,
                      data->rect.size.width,
@@ -484,24 +487,24 @@ static void
    }
 }
 
-static void 
-   _mulle_quadtree_deeprecycle_node( struct mulle_quadtree *tree, 
+static void
+   _mulle_quadtree_deeprecycle_node( struct mulle_quadtree *tree,
                                      struct _mulle_quadtree_node* node)
 {
    struct _mulle_quadtree_data   *data;
    struct _mulle_quadtree_data   *curr;
    unsigned int                    i;
 
-   if( node->subnodes[0]) 
+   if( node->subnodes[0])
    {
      // Non-leaf node: first free subnodes..
-      for( i = 0; i < 4; i++) 
+      for( i = 0; i < 4; i++)
          _mulle_quadtree_deeprecycle_node( tree, node->subnodes[i]);
-   } 
+   }
 
    // Leaf nodes: free data..
    data = node->data;
-   while( data) 
+   while( data)
    {
       curr = data;
       data = data->next;
@@ -511,24 +514,24 @@ static void
    _mulle_quadtree_recycle_node( tree, node);
 }
 
-static void 
-   _mulle_quadtree_deepdestroy_node( struct mulle_quadtree *tree, 
+static void
+   _mulle_quadtree_deepdestroy_node( struct mulle_quadtree *tree,
                                      struct _mulle_quadtree_node* node)
 {
    struct _mulle_quadtree_data   *data;
    struct _mulle_quadtree_data   *curr;
    unsigned int                    i;
 
-   if( node->subnodes[0]) 
+   if( node->subnodes[0])
    {
      // Non-leaf node: first free subnodes..
-      for( i = 0; i < 4; i++) 
+      for( i = 0; i < 4; i++)
          _mulle_quadtree_deepdestroy_node( tree, node->subnodes[i]);
-   } 
+   }
 
    // Leaf nodes: free data..
    data = node->data;
-   while( data) 
+   while( data)
    {
       curr = data;
       data = data->next;
@@ -542,16 +545,16 @@ static void
 
 // Public functions
 struct mulle_quadtree   *mulle_quadtree_init( struct mulle_quadtree *tree,
-                                            CGRect world_rect, 
+                                            CGRect world_rect,
                                             unsigned int max_levels,
-                                            unsigned int max_rects_per_node) 
+                                            unsigned int max_rects_per_node)
 {
    assert( world_rect.size.width > 0);
    assert( world_rect.size.height > 0);
    assert( max_rects_per_node > 0);
 
    // Sane behaviour in case asserts are disabled
-   if (max_rects_per_node == 0) 
+   if (max_rects_per_node == 0)
       max_rects_per_node = 1;
 
    tree->max_levels          = max_levels;
@@ -560,7 +563,7 @@ struct mulle_quadtree   *mulle_quadtree_init( struct mulle_quadtree *tree,
    return( tree);
 }
 
-struct mulle_quadtree   *mulle_quadtree_alloc( struct mulle_allocator *allocator) 
+struct mulle_quadtree   *mulle_quadtree_alloc( struct mulle_allocator *allocator)
 {
    struct mulle_quadtree   *tree;
 
@@ -570,10 +573,10 @@ struct mulle_quadtree   *mulle_quadtree_alloc( struct mulle_allocator *allocator
 }
 
 
-struct mulle_quadtree   *mulle_quadtree_create( CGRect world_rect, 
+struct mulle_quadtree   *mulle_quadtree_create( CGRect world_rect,
                                                 unsigned int max_levels,
                                                 unsigned int max_rects_per_node,
-                                                struct mulle_allocator *allocator) 
+                                                struct mulle_allocator *allocator)
 {
    struct mulle_quadtree   *tree;
 
@@ -582,8 +585,8 @@ struct mulle_quadtree   *mulle_quadtree_create( CGRect world_rect,
    return( tree);
 }
 
-void   mulle_quadtree_free( struct mulle_quadtree* tree) 
-{  
+void   mulle_quadtree_free( struct mulle_quadtree* tree)
+{
    if( ! tree)
       return;
 
@@ -591,8 +594,8 @@ void   mulle_quadtree_free( struct mulle_quadtree* tree)
 }
 
 
-void   mulle_quadtree_done( struct mulle_quadtree  *tree) 
-{  
+void   mulle_quadtree_done( struct mulle_quadtree  *tree)
+{
    struct _mulle_quadtree_node   *n;
    struct _mulle_quadtree_node   *n_next;
    struct _mulle_quadtree_data   *d;
@@ -620,8 +623,8 @@ void   mulle_quadtree_done( struct mulle_quadtree  *tree)
 }
 
 
-void   mulle_quadtree_reset( struct mulle_quadtree  *tree, 
-                             CGRect world_rect) 
+void   mulle_quadtree_reset( struct mulle_quadtree  *tree,
+                             CGRect world_rect)
 {
    if( ! tree)
       return;
@@ -631,15 +634,15 @@ void   mulle_quadtree_reset( struct mulle_quadtree  *tree,
 }
 
 
-void   mulle_quadtree_destroy( struct mulle_quadtree *tree) 
+void   mulle_quadtree_destroy( struct mulle_quadtree *tree)
 {
    mulle_quadtree_done( tree);
    mulle_quadtree_free( tree);
 }
 
-int   mulle_quadtree_insert( struct mulle_quadtree *tree,  
-                             CGRect rect, 
-                             void *payload) 
+int   mulle_quadtree_insert( struct mulle_quadtree *tree,
+                             CGRect rect,
+                             void *payload)
 {
    if( ! tree)
       return( -1);
@@ -647,9 +650,9 @@ int   mulle_quadtree_insert( struct mulle_quadtree *tree,
    return( _mulle_quadtree_node_insert( tree, tree->root_node, rect, payload));
 }
 
-unsigned int   mulle_quadtree_remove_payload( struct mulle_quadtree* tree, 
-                                              CGRect rect, 
-                                              void *payload) 
+unsigned int   mulle_quadtree_remove_payload( struct mulle_quadtree* tree,
+                                              CGRect rect,
+                                              void *payload)
 {
    if( ! tree)
       return( 0);
@@ -658,22 +661,22 @@ unsigned int   mulle_quadtree_remove_payload( struct mulle_quadtree* tree,
 }
 
 
-unsigned int   mulle_quadtree_change_payload( struct mulle_quadtree* tree, 
-                                              CGRect rect, 
+unsigned int   mulle_quadtree_change_payload( struct mulle_quadtree* tree,
+                                              CGRect rect,
                                               void *payload,
-                                              void *newpayload) 
+                                              void *newpayload)
 {
    if( ! tree)
       return( 0);
-    
+
    return _mulle_quadtree_node_change_payload( tree->root_node, rect, payload, newpayload);
 }
 
 
-unsigned int   mulle_quadtree_find_point( struct mulle_quadtree *tree, 
+unsigned int   mulle_quadtree_find_point( struct mulle_quadtree *tree,
                                           CGPoint p,
-                                          mulle_quadtree_callback callback, 
-                                          void *context) 
+                                          mulle_quadtree_callback callback,
+                                          void *context)
 {
    if( ! tree)
       return( 0);
@@ -682,10 +685,10 @@ unsigned int   mulle_quadtree_find_point( struct mulle_quadtree *tree,
 }
 
 
-unsigned int   mulle_quadtree_find_intersecting_rect( struct mulle_quadtree *tree, 
+unsigned int   mulle_quadtree_find_intersecting_rect( struct mulle_quadtree *tree,
                                                       CGRect r,
-                                                      mulle_quadtree_callback callback, 
-                                                      void *context) 
+                                                      mulle_quadtree_callback callback,
+                                                      void *context)
 {
    if( ! tree)
       return( 0);
@@ -694,9 +697,9 @@ unsigned int   mulle_quadtree_find_intersecting_rect( struct mulle_quadtree *tre
 }
 
 
-unsigned int   mulle_quadtree_walk( struct mulle_quadtree *tree, 
-                                  mulle_quadtree_callback callback, 
-                                  void *context) 
+unsigned int   mulle_quadtree_walk( struct mulle_quadtree *tree,
+                                  mulle_quadtree_callback callback,
+                                  void *context)
 {
    if( ! tree || ! callback)
       return( 0);
@@ -704,7 +707,7 @@ unsigned int   mulle_quadtree_walk( struct mulle_quadtree *tree,
 }
 
 
-void   mulle_quadtree_dump( struct mulle_quadtree *tree, FILE *fp) 
+void   mulle_quadtree_dump( struct mulle_quadtree *tree, FILE *fp)
 {
    if( ! tree || !fp)
       return;

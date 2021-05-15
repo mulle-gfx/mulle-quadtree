@@ -1,2 +1,2 @@
-*-standalone.[cm]
-*-standalone.aam
+# Likely to be obsolete soon
+*-standalone.c
