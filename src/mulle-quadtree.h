@@ -24,11 +24,15 @@ typedef void (*mulle_quadtree_callback)( CGRect rect, void* payload, void* conte
  @param rect
         The bounding box. Origin can be negative.
  @param max_levels
-        Maximum number of levels. If maximum level is reached, the nodes are not split anymore
-        and points are added to the node at the last level, ignoring max_points_per_node.
+        Maximum number of levels. If maximum level is reached, the nodes are
+        not split anymore and points are added to the node at the last level,
+        ignoring max_points_per_node. Use 3 if you don't know better. Using
+        large levels, may _seriously_ impeded insertion speed, when lots of
+        rectangles overlap.
  @param max_points_per_node
-        Maximum number of points to store in a single node. After this many points are added to
-        a single node, it is split into into 4 subnodes/quadrants.
+        Maximum number of points to store in a single node. After this many
+        points are added to a single node, it is split into into 4
+        subnodes/quadrants. Use 100 if you don't know better.
  @return Pointer to the quadtree object if successful, otherwise NULL
  */
 struct mulle_quadtree* mulle_quadtree_create( CGRect rect,
@@ -54,7 +58,8 @@ int   mulle_quadtree_insert( struct mulle_quadtree* tree,
                              CGRect rect,
                              void *payload);
 
-/** Change payload of a point with the matching coordinates and payload from the quadtree.
+/** Change payload of a point with the matching coordinates and payload from
+    the quadtree.
     Point is identified by coordinates and the payload. This is different to
     mulle_quadtree_remove_payload
     @return Number of points changed.
@@ -65,8 +70,8 @@ unsigned int   mulle_quadtree_change_payload( struct mulle_quadtree* tree,
                                               void *newpayload);
 
 /** Removes a point with the matching coordinates and payload from the quadtree.
-    Point is identified the payload, coordinates are just used to speed up the lookup of the point
-    to be removed.
+    Point is identified the payload, coordinates are just used to speed up
+    the lookup of the point to be removed.
     @return Number of rectangles removed.
  */
 unsigned int mulle_quadtree_remove_payload( struct mulle_quadtree* tree,

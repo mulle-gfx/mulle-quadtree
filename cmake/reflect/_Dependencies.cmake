@@ -13,7 +13,7 @@ if( MULLE_TRACE_INCLUDE)
 endif()
 
 #
-# Generated from sourcetree: 86F90D99-A03D-4BAE-B0EF-C3B9A89D66DE;mulle-layout;no-all-load,no-cmake-inherit,no-cmake-searchpath,no-import,no-singlephase;
+# Generated from sourcetree: 95CCD172-3111-4C28-ADCA-C45C318EE015;mulle-layout;no-all-load,no-cmake-inherit,no-cmake-searchpath,no-import,no-singlephase;
 # Disable with : `mulle-sourcetree mark mulle-layout no-link`
 # Disable for this platform: `mulle-sourcetree mark mulle-layout no-cmake-platform-linux`
 #
@@ -36,13 +36,14 @@ if( NOT MULLE_LAYOUT_LIBRARY)
       )
       # intentionally left blank
    else()
+      # Disable with: `mulle-sourcetree mark mulle-layout no-require-link`
       message( FATAL_ERROR "MULLE_LAYOUT_LIBRARY was not found")
    endif()
 endif()
 
 
 #
-# Generated from sourcetree: F9ABCCE1-FD86-47C9-97A5-4C95275B19C3;mulle-allocator;no-all-load,no-cmake-inherit,no-cmake-searchpath,no-import,no-singlephase;
+# Generated from sourcetree: 04F9D342-5123-461E-BDC0-A65449E13DE0;mulle-allocator;no-all-load,no-cmake-inherit,no-cmake-searchpath,no-import,no-singlephase;
 # Disable with : `mulle-sourcetree mark mulle-allocator no-link`
 # Disable for this platform: `mulle-sourcetree mark mulle-allocator no-cmake-platform-linux`
 #
@@ -65,6 +66,7 @@ if( NOT MULLE_ALLOCATOR_LIBRARY)
       )
       # intentionally left blank
    else()
+      # Disable with: `mulle-sourcetree mark mulle-allocator no-require-link`
       message( FATAL_ERROR "MULLE_ALLOCATOR_LIBRARY was not found")
    endif()
 endif()

@@ -169,7 +169,7 @@ static unsigned int
                                         void* payload,
                                         struct mulle_quadtree *tree)
 {
-   unsigned int                    count;
+   unsigned int                  count;
    struct _mulle_quadtree_data   *data;
    struct _mulle_quadtree_data   *prev_data;
    struct _mulle_quadtree_node   *subnode;
@@ -299,20 +299,23 @@ static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
       for( i = 0; i < 4; i++)
       {
          subnode      = node->subnodes[ i];
-         intersection = CGRectIntersection( subnode->rect, rect);
-         if( intersection.size.width <= 0.0 || intersection.size.height <= 0.0)
+         // the test is cheap but tht actual intersection is slow, assume
+         // that this fails more often than not
+         if( ! CGRectIntersectsRect( subnode->rect, rect))
             continue;
 
+         intersection = CGRectIntersection( subnode->rect, rect);
          workDone |= _mulle_quadtree_node_insert( tree, subnode, intersection, payload);
       }
       return( workDone);
    }
 
-   // only memorize the intersections that fits in our node,
+   // only memorize the intersections that fit in our node,
    // which is analog to how subnodes get their client rects
-   intersection = CGRectIntersection( rect, node->rect);
-   if( intersection.size.width <= 0.0 || intersection.size.height <= 0.0)
+   if( ! CGRectIntersectsRect( rect, node->rect))
       return( 0);
+
+   intersection = CGRectIntersection( rect, node->rect);
 
    // Leaf node, insert here by creating a new element at the head of linked list
 
@@ -345,9 +348,9 @@ static unsigned int
                                     mulle_quadtree_callback callback,
                                     void* context)
 {
-   unsigned int                   count;
-   unsigned int                   i;
-   struct _mulle_quadtree_data  *data;
+   unsigned int                  count;
+   unsigned int                  i;
+   struct _mulle_quadtree_data   *data;
 
    count = 0;
    if( node->subnodes[ 0])
@@ -382,8 +385,8 @@ static unsigned int
                                                 mulle_quadtree_callback callback,
                                                 void* context)
 {
-   unsigned int                   count;
-   unsigned int                   i;
+   unsigned int                 count;
+   unsigned int                 i;
    struct _mulle_quadtree_data  *data;
 
    count = 0;
@@ -393,7 +396,10 @@ static unsigned int
 
       for( i = 0; i < 4; i++)
          if( CGRectIntersectsRect( node->subnodes[i]->rect, rect))
-            count += _mulle_quadtree_node_find_intersecting_rect( node->subnodes[i], rect, callback, context);
+            count += _mulle_quadtree_node_find_intersecting_rect( node->subnodes[i],
+                                                                  rect,
+                                                                  callback,
+                                                                  context);
       return( count);
    }
 
@@ -563,6 +569,7 @@ struct mulle_quadtree   *mulle_quadtree_init( struct mulle_quadtree *tree,
    return( tree);
 }
 
+
 struct mulle_quadtree   *mulle_quadtree_alloc( struct mulle_allocator *allocator)
 {
    struct mulle_quadtree   *tree;
@@ -584,6 +591,7 @@ struct mulle_quadtree   *mulle_quadtree_create( CGRect world_rect,
    mulle_quadtree_init( tree, world_rect, max_levels, max_rects_per_node);
    return( tree);
 }
+
 
 void   mulle_quadtree_free( struct mulle_quadtree* tree)
 {
@@ -629,6 +637,9 @@ void   mulle_quadtree_reset( struct mulle_quadtree  *tree,
    if( ! tree)
       return;
 
+   if( CGRectIsNull( world_rect))
+      world_rect = tree->root_node->rect;
+
    _mulle_quadtree_deeprecycle_node( tree, tree->root_node);
    tree->root_node = _mulle_quadtree_create_node( tree, world_rect, 0);
 }
@@ -640,6 +651,7 @@ void   mulle_quadtree_destroy( struct mulle_quadtree *tree)
    mulle_quadtree_free( tree);
 }
 
+
 int   mulle_quadtree_insert( struct mulle_quadtree *tree,
                              CGRect rect,
                              void *payload)
@@ -649,6 +661,7 @@ int   mulle_quadtree_insert( struct mulle_quadtree *tree,
 
    return( _mulle_quadtree_node_insert( tree, tree->root_node, rect, payload));
 }
+
 
 unsigned int   mulle_quadtree_remove_payload( struct mulle_quadtree* tree,
                                               CGRect rect,

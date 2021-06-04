@@ -5,7 +5,7 @@
  *
  *      mulle-sde environment set MULLE_SOURCETREE_TO_C_INCLUDE_FILE DISABLE
  *
- *   To not generate any header files:
+ *   To not let mulle-sourcetree-to-c generate any header files:
  *
  *      mulle-sde environment set MULLE_SOURCETREE_TO_C_RUN DISABLE
  *
@@ -15,7 +15,7 @@
 #define _mulle_quadtree_include_h__
 
 // You can tweak the following #include with these commands.
-// (Use 86F90D99-A03D-4BAE-B0EF-C3B9A89D66DE instead of mulle-layout if there are duplicate entries)
+// (Use 95CCD172-3111-4C28-ADCA-C45C318EE015 instead of mulle-layout if there are duplicate entries)
 //    remove:             `mulle-sourcetree mark mulle-layout no-header`
 //    rename:             `mulle-sde dependency|library set mulle-layout include whatever.h`
 //    reorder:            `mulle-sourcetree move mulle-layout <up|down>`
@@ -27,7 +27,7 @@
 #include <mulle-layout/mulle-layout.h>   // mulle-layout
 
 // You can tweak the following #include with these commands.
-// (Use F9ABCCE1-FD86-47C9-97A5-4C95275B19C3 instead of mulle-allocator if there are duplicate entries)
+// (Use 04F9D342-5123-461E-BDC0-A65449E13DE0 instead of mulle-allocator if there are duplicate entries)
 //    remove:             `mulle-sourcetree mark mulle-allocator no-header`
 //    rename:             `mulle-sde dependency|library set mulle-allocator include whatever.h`
 //    reorder:            `mulle-sourcetree move mulle-allocator <up|down>`

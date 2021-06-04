@@ -2,7 +2,7 @@
 
 #### 🌴 mulle-quadtree for tracking rectangles
 
-This is used in MulleUICore to enable "mouse over" functionality aka
+This was used in MulleUICore to enable "mouse over" functionality aka
 "tracking rectangles".
 
 MulleQuadtree is very loosely based on the MIT Licensed:
