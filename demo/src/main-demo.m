@@ -3,6 +3,9 @@
 
 #define USE_QUADTREE
 
+#define N_PARTICLES  5000
+#define N_FINGERS    12
+
 
 // Lesson learned. The quadtree is only useful if
 // * you can keep it around for multiple frames (you usually can't)
@@ -24,10 +27,10 @@ static void   lighten_layer( CGRect rect, void *payload, void *context)
 
    if( [layer numberOfAnimations] <= 1)
    {
-      animation = [[[CABasicAnimation alloc] initWithPropertySetter:@selector( setBackgroundColor:)
-                                                         startColor:*color
-                                                           endColor:[layer backgroundColor]
-                                                            options:NULL] autorelease];
+      animation = [[[CABasicAnimation alloc] initWithProperty:MulleObjCInstanceSearchProperty( layer, @selector( backgroundColor))
+                                              startColorValue:*color
+                                                endColorValue:[layer backgroundColor]
+                                                      options:NULL] autorelease];
       [layer addAnimation:animation];
    }
 }
@@ -81,12 +84,12 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
    // merely a ploy to waste time and show that quadtree gets better the
    // more queries it gets per lifetime, compared to the brute forcer
    //
-   for( i = 0; i < 12; i += 1)
+   for( i = 0; i < N_FINGERS; i += 1)
    {
-      factor        = i / 11.0;
+      factor        = (CGFloat) i / (N_FINGERS - 1);
       color         = MulleColorMakeHSL( factor, 0.5 + 0.5 * factor, 0.3 + 0.7 * factor);
 
-      polar         = CAPolarPointMake( CAAngleHourToRadians( i), 100);
+      polar         = CAPolarPointMake( 100, CAAngleHourToRadians( ((CGFloat) i / N_FINGERS) * 12.0));
       pointOnCircle = CGPointAddPolarPoint( point, polar);
 
       rect = CGRectMake( 0, 0, 3, 3);
@@ -163,13 +166,16 @@ static void   setupSceneInView( UIView *contentPlane)
    NSUInteger                       i;
    struct CABasicAnimationOptions   options;
 
-   options = CABasicAnimationOptionsMakeCurve( 0, 2.0, INFINITY, YES, CAAnimationCurveEaseOut);
+   options = CABasicAnimationOptionsMakeCurve( CARelativeTimeRangeMake( 0, 2.0),
+                                               INFINITY,
+                                               CAAnimationReverses,
+                                               CAAnimationCurveEaseOut);
 
    frame = [contentPlane contentRect];
    frame = UIEdgeInsetsInsetRect( frame, UIEdgeInsetsMake( 10, 10, 10, 10));
 
 
-   for( i = 0; i < 5000; i++)
+   for( i = 0; i < N_PARTICLES; i++)
    {
       srcRect  = CGRectMakeRandomInRect( frame, CGSizeMake( 5, 5), CGSizeMake( 20, 20));
       dstRect  = CGRectMakeRandomInRect( frame, CGSizeMake( 5, 5), CGSizeMake( 20, 20));
@@ -180,10 +186,10 @@ static void   setupSceneInView( UIView *contentPlane)
                                                    0.0,
                                                    0.3 + 0.3 * CGFloatMakeRandom())];
 
-      animation = [[[CABasicAnimation alloc] initWithPropertySetter:@selector( setFrame:)
-                                                         startRect:srcRect
-                                                           endRect:dstRect
-                                                            options:&options] autorelease];
+      animation = [[[CABasicAnimation alloc] initWithProperty:MulleObjCInstanceSearchProperty( layer, @selector( frame))
+                                               startRectValue:srcRect
+                                                 endRectValue:dstRect
+                                                      options:&options] autorelease];
       [layer addAnimation:animation];
 
       //fprintf( stderr, "%s %s\n", __PRETTY_FUNCTION__, CGRectCStringDescription( [layer frame]));
@@ -203,7 +209,7 @@ int   main( int argc, char *argv[])
       window = [UIWindow windowWithFrame:CGRectMake( 0.0, 0.0, 800.0, 600.0)];
       assert( window);
 
-      [window setBackgroundColor:CGColorCreateGenericRGB( 1.0, 1.0, 1.0, 1.0)];
+      [window setBackgroundColor:CGColorMakeRGBA( 1.0, 1.0, 1.0, 1.0)];
       [window setEventCallback:handleEvent];
       [window setFrameRate:UIWindowFrameRateUnsynced];
 
