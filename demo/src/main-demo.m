@@ -78,7 +78,7 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
    // could be nicer...
    //
    point = [event mouseLocationInView:contentPlane];
-   //fprintf( stderr, "%s %s\n", __PRETTY_FUNCTION__, CGPointCStringDescription( point));
+   //fprintf( stderr, "%s %s\n", __PRETTY_FUNCTION__, CGPointUTF8String( point));
 
    //
    // merely a ploy to waste time and show that quadtree gets better the
@@ -192,7 +192,7 @@ static void   setupSceneInView( UIView *contentPlane)
                                                       options:&options] autorelease];
       [layer addAnimation:animation];
 
-      //fprintf( stderr, "%s %s\n", __PRETTY_FUNCTION__, CGRectCStringDescription( [layer frame]));
+      //fprintf( stderr, "%s %s\n", __PRETTY_FUNCTION__, CGRectUTF8String( [layer frame]));
       [contentPlane addLayer:layer];
    }
 }
