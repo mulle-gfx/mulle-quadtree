@@ -20,7 +20,7 @@ static struct mulle_quadtree  *quadtree;
 static void   lighten_layer( CGRect rect, void *payload, void *context)
 {
    CALayer            *layer = payload;
-   CGColorRef         *color = context;
+   CGColor         *color = context;
    CABasicAnimation   *animation;
 
    //fprintf( stderr, "%s\n", __PRETTY_FUNCTION__);
@@ -62,7 +62,7 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
    CGRect          rect;
    NSUInteger      i;
    CAPolarPoint    polar;
-   CGColorRef      color;
+   CGColor      color;
    CGFloat         factor;
    //
    // any event carries mouseLocation information, so we actually needn't
@@ -87,7 +87,7 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
    for( i = 0; i < N_FINGERS; i += 1)
    {
       factor        = (CGFloat) i / (N_FINGERS - 1);
-      color         = MulleColorMakeHSL( factor, 0.5 + 0.5 * factor, 0.3 + 0.7 * factor);
+      color         = CGColorMakeHSL( factor, 0.5 + 0.5 * factor, 0.3 + 0.7 * factor);
 
       polar         = CAPolarPointMake( 100, CAAngleHourToRadians( ((CGFloat) i / N_FINGERS) * 12.0));
       pointOnCircle = CGPointAddPolarPoint( point, polar);
@@ -182,7 +182,7 @@ static void   setupSceneInView( UIView *contentPlane)
 
       layer = [CALayer layerWithFrame:srcRect];
 //   printf( "hue: %.2f\n", hue);
-      [layer setBackgroundColor:MulleColorMakeHSL( 0.0,
+      [layer setBackgroundColor:CGColorMakeHSL( 0.0,
                                                    0.0,
                                                    0.3 + 0.3 * CGFloatMakeRandom())];
 

@@ -28,6 +28,10 @@
  */
 
 #include "_mulle-quadtree-include.h"
+#ifndef MULLE_QUADTREE_EXTERN_GLOBAL
+# define MULLE_QUADTREE_EXTERN_GLOBAL MULLE_C_EXTERN_GLOBAL
+#endif
+
 
 /* You can add some more include statements here */
 
