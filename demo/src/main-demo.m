@@ -166,7 +166,7 @@ static void   setupSceneInView( UIView *contentPlane)
    NSUInteger                       i;
    struct CABasicAnimationOptions   options;
 
-   options = CABasicAnimationOptionsMakeCurve( CARelativeTimeRangeMake( 0, 2.0),
+   options = CABasicAnimationOptionsMakeCurve( mulle_relativetimerange_make( 0, 2.0),
                                                INFINITY,
                                                CAAnimationReverses,
                                                CAAnimationCurveEaseOut);
@@ -213,8 +213,6 @@ int   main( int argc, char *argv[])
       [window setEventCallback:handleEvent];
       [window setFrameRate:UIWindowFrameRateUnsynced];
 
-      perf = [MulleUIPerf object];
-      [window setRenderDelegate:perf];
 
 #ifdef USE_QUADTREE
       //
@@ -227,9 +225,12 @@ int   main( int argc, char *argv[])
       setupSceneInView( [window contentPlane]);
 
       [app addWindow:window];
-      [window renderLoop];
    }
-   return( [app terminate]);
+
+   perf = [MulleUIPerf object];
+   [window setFrameDelegate:perf];
+
+   return( [app run]);
 }
 
 
