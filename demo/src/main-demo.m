@@ -77,7 +77,7 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
    // there we are, now use the mouse motion event to move the bounds
    // could be nicer...
    //
-   point = [event mouseLocationInView:contentPlane];
+   point = [event locationInView:contentPlane];
    //fprintf( stderr, "%s %s\n", __PRETTY_FUNCTION__, CGPointUTF8String( point));
 
    //

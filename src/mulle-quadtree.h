@@ -5,6 +5,8 @@
 #ifndef mulle_quadtree_h__
 #define mulle_quadtree_h__
 
+#define MULLE_QUADTREE_VERSION  ((1 << 24) | (0 << 8) | 0)
+ 
 #include "include.h"
 
 #include <stdio.h>
@@ -104,6 +106,10 @@ unsigned int mulle_quadtree_walk( struct mulle_quadtree* tree,
                                   void* context);
 
 
+static inline unsigned int   mulle_quadtree_count( struct mulle_quadtree* tree)
+{
+    return( mulle_quadtree_walk( tree, NULL, NULL)); 
+}
 
 /*
  * dump tree structure

@@ -299,7 +299,7 @@ static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
       for( i = 0; i < 4; i++)
       {
          subnode      = node->subnodes[ i];
-         // the test is cheap but tht actual intersection is slow, assume
+         // the test is cheap but the actual intersection is slow, assume
          // that this fails more often than not
          if( ! CGRectIntersectsRect( subnode->rect, rect))
             continue;
@@ -424,9 +424,9 @@ static unsigned int
                               mulle_quadtree_callback callback,
                               void* context)
 {
-   unsigned int                    count;
+   unsigned int                  count;
    struct _mulle_quadtree_data   *data;
-   unsigned int                    i;
+   unsigned int                  i;
 
    count = 0;
    if( node->subnodes[0])
@@ -442,8 +442,7 @@ static unsigned int
    while(data)
    {
       count++;
-      if (callback)
-         (*callback)( data->rect, data->payload, context);
+      (*callback)( data->rect, data->payload, context);
       data = data->next;
    }
    assert( count == node->data_count);
@@ -710,12 +709,21 @@ unsigned int   mulle_quadtree_find_intersecting_rect( struct mulle_quadtree *tre
 }
 
 
-unsigned int   mulle_quadtree_walk( struct mulle_quadtree *tree,
-                                  mulle_quadtree_callback callback,
-                                  void *context)
+static void   mulle_quadtree_dummy_callback( CGRect rect, 
+                                             void *payload, 
+                                             void *context)
 {
-   if( ! tree || ! callback)
+}
+
+
+unsigned int   mulle_quadtree_walk( struct mulle_quadtree *tree,
+                                    mulle_quadtree_callback callback,
+                                    void *context)
+{
+   if( ! tree)
       return( 0);
+   if( ! callback)
+      callback = mulle_quadtree_dummy_callback;
    return _mulle_quadtree_node_walk( tree->root_node, callback, context);
 }
 
