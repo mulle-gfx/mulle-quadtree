@@ -42,7 +42,7 @@ endif()
 
 
 #
-# Generated from sourcetree: 11D326E3-6777-40D1-9874-08EF1AE861C8;mulle-geometry;no-all-load,no-cmake-loader,no-cmake-searchpath,no-import;
+# Generated from sourcetree: 11D326E3-6777-40D1-9874-08EF1AE861C8;mulle-geometry;no-all-load,no-cmake-loader,no-cmake-searchpath,no-import,no-singlephase;
 # Disable with : `mulle-sourcetree mark mulle-geometry no-link`
 # Disable for this platform: `mulle-sourcetree mark mulle-geometry no-cmake-platform-${MULLE_UNAME}`
 #

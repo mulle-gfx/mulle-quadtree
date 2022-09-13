@@ -87,7 +87,7 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
    for( i = 0; i < N_FINGERS; i += 1)
    {
       factor        = (CGFloat) i / (N_FINGERS - 1);
-      color         = CGColorMakeHSL( factor, 0.5 + 0.5 * factor, 0.3 + 0.7 * factor);
+      color         = CGColorMakeWithHSL( factor, 0.5 + 0.5 * factor, 0.3 + 0.7 * factor);
 
       polar         = CAPolarPointMake( 100, CAAngleHourToRadians( ((CGFloat) i / N_FINGERS) * 12.0));
       pointOnCircle = CGPointAddPolarPoint( point, polar);
@@ -182,7 +182,7 @@ static void   setupSceneInView( UIView *contentPlane)
 
       layer = [CALayer layerWithFrame:srcRect];
 //   printf( "hue: %.2f\n", hue);
-      [layer setBackgroundColor:CGColorMakeHSL( 0.0,
+      [layer setBackgroundColor:CGColorMakeWithHSL( 0.0,
                                                    0.0,
                                                    0.3 + 0.3 * CGFloatMakeRandom())];
 
@@ -209,7 +209,7 @@ int   main( int argc, char *argv[])
       window = [UIWindow windowWithFrame:CGRectMake( 0.0, 0.0, 800.0, 600.0)];
       assert( window);
 
-      [window setBackgroundColor:CGColorMakeRGBA( 1.0, 1.0, 1.0, 1.0)];
+      [window setBackgroundColor:CGColorMakeWithRGBA( 1.0, 1.0, 1.0, 1.0)];
       [window setEventCallback:handleEvent];
       [window setFrameRate:UIWindowFrameRateUnsynced];
 
