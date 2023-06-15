@@ -56,38 +56,52 @@ then
 fi
 
 #
+# We switch on the value "PROJECT_CONFIG" here, which can be empty
+#
+if [ -z "${PROJECT_CONFIG}" ]
+then
+   envdir="${MULLE_ENV_ETC_DIR}"
+else
+   envdir="${MULLE_ENV_ETC_DIR}/${PROJECT_CONFIG}"
+fi
+
+#
 # Global user settings
 #
-if [ -f "${MULLE_ENV_ETC_DIR}/environment-global.sh" ]
+if [ -f "${envdir}/environment-global.sh" ]
 then
-   . "${MULLE_ENV_ETC_DIR}/environment-global.sh"
+   . "${envdir}/environment-global.sh"
 fi
 
 #
 # Load in some user modifications depending on os, hostname, username.
 #
-if [ -f "${MULLE_ENV_ETC_DIR}/environment-host-${MULLE_HOSTNAME}.sh" ]
+if [ -f "${envdir}/environment-host-${MULLE_HOSTNAME}.sh" ]
 then
-   . "${MULLE_ENV_ETC_DIR}/environment-host-${MULLE_HOSTNAME}.sh"
+   . "${envdir}/environment-host-${MULLE_HOSTNAME}.sh"
 fi
 
-if [ -f "${MULLE_ENV_ETC_DIR}/environment-os-${MULLE_UNAME}.sh" ]
+if [ -f "${envdir}/environment-os-${MULLE_UNAME}.sh" ]
 then
-   . "${MULLE_ENV_ETC_DIR}/environment-os-${MULLE_UNAME}.sh"
+   . "${envdir}/environment-os-${MULLE_UNAME}.sh"
 fi
 
-if [ -f "${MULLE_ENV_ETC_DIR}/environment-user-${MULLE_USERNAME}.sh" ]
+if [ -f "${envdir}/environment-user-${MULLE_USERNAME}.sh" ]
 then
-   . "${MULLE_ENV_ETC_DIR}/environment-user-${MULLE_USERNAME}.sh"
+   . "${envdir}/environment-user-${MULLE_USERNAME}.sh"
 fi
+
 
 #
 # For more complex edits, that don't work with the cmdline tool
 # Therefore its not in a scope
 #
-if [ -f "${MULLE_ENV_ETC_DIR}/environment-custom.sh" ]
+if [ -f "${envdir}/environment-custom.sh" ]
 then
-   . "${MULLE_ENV_ETC_DIR}/environment-custom.sh"
+   . "${envdir}/environment-custom.sh"
 fi
+
+unset envdir
+
 unset MULLE_ENV_ETC_DIR
 unset MULLE_ENV_SHARE_DIR

@@ -29,25 +29,26 @@ if( NOT __CMAKE_TWEAKS_C_CMAKE__)
                           OUTPUT_STRIP_TRAILING_WHITESPACE)
          string( REGEX REPLACE "\\.[^.]*$" "" OSX_VERSION ${OSX_VERSION_FULL} )
 
-         set(CMAKE_OSX_DEPLOYMENT_TARGET "${OSX_VERSION}" CACHE STRING "Deployment target for OSX" FORCE)
+         set( CMAKE_OSX_DEPLOYMENT_TARGET "${OSX_VERSION}" CACHE STRING "Deployment target for OSX" FORCE)
       endif()
 
-      set( CMAKE_POSITION_INDEPENDENT_CODE FALSE)
+      set( CMAKE_POSITION_INDEPENDENT_CODE OFF)
 
    else()
       if( WIN32)
          # may not be enough though...
-
-         cmake_minimum_required (VERSION 3.4)
-
-         # set only for libraries ?
-         set( CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+         cmake_minimum_required( VERSION 3.4)
       else()
          # UNIXy gcc based
-         cmake_minimum_required (VERSION 3.0)
-
-         # set only for libraries ?
-         set( CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+         cmake_minimum_required( VERSION 3.0)
+      endif()
+      # so we build static libs, but they might be linked into code
+      # that needs -fPIC, but on some platforms (MUSL, COSMOPOLITAN)
+      # we don't want it
+      if( COSMOPOLITAN AND MUSL_STATIC_ONLY)
+         set( CMAKE_POSITION_INDEPENDENT_CODE OFF)
+      else()
+         set( CMAKE_POSITION_INDEPENDENT_CODE ON)
       endif()
    endif()
 

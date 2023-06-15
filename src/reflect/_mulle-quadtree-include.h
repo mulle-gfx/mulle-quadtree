@@ -15,18 +15,6 @@
 #define _mulle_quadtree_include_h__
 
 // You can tweak the following #include with these commands.
-// (Use 04F9D342-5123-461E-BDC0-A65449E13DE0 instead of mulle-allocator if there are duplicate entries)
-//    remove #include:: `mulle-sde dependency mark mulle-allocator no-header`
-//    rename:              `mulle-sde dependency|library set mulle-allocator include whatever.h`
-//    reorder:             `mulle-sde dependency move mulle-allocator <up|down>`
-//    toggle #include:    `mulle-sde dependency mark mulle-allocator [no-]import`
-//    toggle public:       `mulle-sde dependency mark mulle-allocator [no-]public`
-//    toggle optional:     `mulle-sde dependency mark mulle-allocator [no-]require`
-//    remove for platform: `mulle-sde dependency mark mulle-allocator no-platform-<uname>`
-//        (use `mulle-sourcetree-to-c --unames` to list known values)
-#include <mulle-allocator/mulle-allocator.h>   // mulle-allocator
-
-// You can tweak the following #include with these commands.
 // (Use 11D326E3-6777-40D1-9874-08EF1AE861C8 instead of mulle-geometry if there are duplicate entries)
 //    remove #include:: `mulle-sde dependency mark mulle-geometry no-header`
 //    rename:              `mulle-sde dependency|library set mulle-geometry include whatever.h`

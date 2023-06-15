@@ -1,0 +1,21 @@
+{
+   "name" : "mulle-quadtree",
+   "version" : "1.0.0",
+   "description" : "mulle-quadtree for tracking rectangles",
+   "keywords" : [],
+   "license" : "UNLICENSED",
+   "repo" : "MulleUI/mulle-quadtree",
+   "src" : [
+      "src/include-private.h",
+      "src/include.h",
+      "src/mulle-quadtree.c",
+      "src/mulle-quadtree.h",
+      "src/reflect/_mulle-quadtree-include-private.h",
+      "src/reflect/_mulle-quadtree-include-public.h",
+      "src/reflect/_mulle-quadtree-include.h",
+      "src/reflect/_mulle-quadtree-provide.h"
+   ],
+   "dependencies" : {
+      "MulleUI/mulle-geometry": "*"
+   }
+}

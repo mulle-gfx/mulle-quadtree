@@ -114,6 +114,7 @@ static void   _mulle_quadtree_recycle_data( struct mulle_quadtree *tree,
    tree->freed_datas = d;
 }
 
+
 static void   _mulle_quadtree_destroy_data( struct mulle_quadtree *tree,
                                             struct _mulle_quadtree_data *d)
 {
@@ -131,7 +132,6 @@ static unsigned int
    unsigned int                  count;
    unsigned int                  i;
    struct _mulle_quadtree_data   *data;
-   struct _mulle_quadtree_data   *prev_data;
    struct _mulle_quadtree_node   *subnode;
 
    count = 0;
@@ -173,7 +173,7 @@ static unsigned int
    struct _mulle_quadtree_data   *data;
    struct _mulle_quadtree_data   *prev_data;
    struct _mulle_quadtree_node   *subnode;
-   unsigned int                    i;
+   unsigned int                  i;
 
    count = 0;
 
@@ -198,7 +198,7 @@ static unsigned int
           // Payload matches, remove this entry
           count++;
           node->data_count--;
-          if (prev_data)
+          if( prev_data)
           {
               prev_data->next = data->next;
               _mulle_quadtree_recycle_data( tree, data);
@@ -235,7 +235,7 @@ static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree,
    struct _mulle_quadtree_data   *data;
    struct _mulle_quadtree_data   *next;
    struct _mulle_quadtree_node   *subnode;
-   unsigned int                    i;
+   unsigned int                  i;
 
    subnode_rect_size = CGSizeMake( node->rect.size.width / 2.0,
                                    node->rect.size.height / 2.0);
@@ -281,13 +281,9 @@ static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
                                          void  *payload)
 {
    struct _mulle_quadtree_data   *new_data;
-   struct _mulle_quadtree_data   *data;
-   struct _mulle_quadtree_data   *next;
-   struct _mulle_quadtree_data   *prev;
-   unsigned int                  i;
    struct _mulle_quadtree_node   *subnode;
    CGRect                        intersection;
-   unsigned int                  nRects;
+   unsigned int                  i;
    int                           workDone;
 
    assert( tree);

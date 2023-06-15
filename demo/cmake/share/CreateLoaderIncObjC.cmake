@@ -139,6 +139,7 @@ if( CREATE_OBJC_LOADER_INC)
 
    add_custom_target( "__objc_loader_inc__"
       DEPENDS ${OBJC_LOADER_INC}
+      COMMENT "Target to build \"${OBJC_LOADER_INC}\""
    )
 
    if( TARGET "_2_${LIBRARY_NAME}")

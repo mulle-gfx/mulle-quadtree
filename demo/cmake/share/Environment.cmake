@@ -47,6 +47,9 @@ if( NOT __ENVIRONMENT__CMAKE__)
       endif()
    endif()
 
+   message( STATUS "DEPENDENCY_DIR=${DEPENDENCY_DIR}")
+   message( STATUS "ADDICTION_DIR=${ADDICTION_DIR}")
+
    #
    # MULLE_SDK is dependency/addiction. Not sysroot!
    #
