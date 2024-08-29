@@ -89,7 +89,7 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
       factor        = (CGFloat) i / (N_FINGERS - 1);
       color         = CGColorMakeWithHSL( factor, 0.5 + 0.5 * factor, 0.3 + 0.7 * factor);
 
-      polar         = CAPolarPointMake( 100, CAAngleHourToAngle( ((CGFloat) i / N_FINGERS) * 12.0));
+      polar         = CAPolarPointMake( 100, CAHourToAngle( ((CGFloat) i / N_FINGERS) * 12.0));
       pointOnCircle = CGPointAddPolarPoint( point, polar);
 
       rect = CGRectMake( 0, 0, 3, 3);

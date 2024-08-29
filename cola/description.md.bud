@@ -1,9 +1,6 @@
-
-# 🌴 mulle-quadtree
-
-#### 🌴 mulle-quadtree for tracking rectangles
-
-This can be used to enable "mouse over" functionality aka "tracking rectangles".
+This library is used to enable "mouse over" functionality aka
+"tracking rectangles". You feed it a set of rectangles. After that you can
+do a hit test to find the top most rectangle, that's at the given location.
 
 MulleQuadtree is very loosely based on the MIT Licensed:
 Kvad - a C99 quadtree implementation

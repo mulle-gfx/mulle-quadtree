@@ -1,0 +1,22 @@
+{
+   project =
+   {
+      description="🌴 mulle-quadtree for tracking rectangles";
+      domain="github";
+      name="mulle-quadtree";
+      user="mulle-gfx";
+      repo="mulle-quadtree";
+      homepage="https://github.com/MulleUI/mulle-quadtree/tree/mulle-quadtree.git";
+      license="UNLICENSED"
+   };
+   dependencies =
+   (
+      {
+         domain="github";
+         name="mulle-geometry";
+         repo="mulle-geometry";
+         url="https://github.com/MulleUI/mulle-geometry";
+         user="MulleUI";
+      }
+   );
+}
