@@ -27,6 +27,5 @@
 
 /* You can add some more include statements here */
 
-#include "demos-version.h"
 
 #endif

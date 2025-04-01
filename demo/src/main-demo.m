@@ -19,18 +19,24 @@ static struct mulle_quadtree  *quadtree;
 
 static void   lighten_layer( CGRect rect, void *payload, void *context)
 {
-   CALayer            *layer = payload;
-   CGColor         *color = context;
-   CABasicAnimation   *animation;
+   CGGraphicsLayer              *layer = MULLE_OBJC_CLASS_CAST( CGGraphicsLayer, payload);
+   CGColor                      *color = context;
+   CABasicAnimation             *animation;
+   struct _mulle_objc_property  *property;
 
    //fprintf( stderr, "%s\n", __PRETTY_FUNCTION__);
 
    if( [layer numberOfAnimations] <= 1)
    {
-      animation = [[[CABasicAnimation alloc] initWithProperty:MulleObjCInstanceSearchProperty( layer, @selector( backgroundColor))
-                                              startColorValue:*color
-                                                endColorValue:[layer backgroundColor]
-                                                      options:NULL] autorelease];
+      property  = MulleObjCInstanceSearchProperty( layer, @selector( backgroundColor));
+      assert( property);
+
+      animation = [CABasicAnimation alloc];
+      animation = [animation initWithProperty:property
+                              startColorValue:*color
+                                endColorValue:[layer backgroundColor]
+                                      options:NULL];
+      animation = [animation autorelease];
       [layer addAnimation:animation];
    }
 }
@@ -42,21 +48,27 @@ static void  layers_find_intersecting_rect( struct mulle_pointerarray *layers,
                                             mulle_quadtree_callback callback,
                                             void *userinfo)
 {
-   struct mulle_pointerarrayenumerator   rover;
-   CALayer                               *layer;
+   CGGraphicsLayer   *layer;
 
-   rover = mulle_pointerarray_enumerate( layers);
-   while( _mulle_pointerarrayenumerator_next( &rover, (void **) &layer))
+   mulle_pointerarray_for( layers, layer)
+   {
       if( CGRectIntersectsRect( [layer frame], rect))
          (*callback)( rect, layer, userinfo);
-   mulle_pointerarrayenumerator_done( &rover);
+   }
 }
 
 
+@interface MyWindow : UIWindow
+@end
+
+
+@implementation MyWindow
+
 //
-static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
+- (UIEvent  *) acceptMouseMotionEvent:(UIMouseMotionEvent *) event
 {
-   UIWindowPlane   *contentPlane;
+   UIWindow        *window;
+   UIView          *contentView;
    CGPoint         point;
    CGPoint         pointOnCircle;
    CGRect          rect;
@@ -64,20 +76,20 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
    CAPolarPoint    polar;
    CGColor         color;
    CGFloat         factor;
+   CGFloat         hour;
+
    //
    // any event carries mouseLocation information, so we actually needn't
    // check this, but anyway...
    //
-   if( [event eventType] != UIEventTypeMotion)
-      return( event);
 
-   contentPlane = [window contentPlane];
+   contentView = [self contentView];
 
    //
    // there we are, now use the mouse motion event to move the bounds
    // could be nicer...
    //
-   point = [event locationInView:contentPlane];
+   point = [event locationInView:contentView];
    //fprintf( stderr, "%s %s\n", __PRETTY_FUNCTION__, CGPointUTF8String( point));
 
    //
@@ -89,7 +101,9 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
       factor        = (CGFloat) i / (N_FINGERS - 1);
       color         = CGColorMakeWithHSL( factor, 0.5 + 0.5 * factor, 0.3 + 0.7 * factor);
 
-      polar         = CAPolarPointMake( 100, CAHourToAngle( ((CGFloat) i / N_FINGERS) * 12.0));
+      hour          = ((CGFloat) i / N_FINGERS) * 12.0;
+      hour          = hour == 0.0 ? 12 : hour;
+      polar         = CAPolarPointMakeWithAngle( 100, CAHourToAngle( hour));
       pointOnCircle = CGPointAddPolarPoint( point, polar);
 
       rect = CGRectMake( 0, 0, 3, 3);
@@ -104,9 +118,10 @@ static UIEvent  *handleEvent( UIWindow *window, UIEvent *event)
    }
    //mulle_quadtree_find_point( quadtree, point, lighten_layer, NULL);
 
-   return( event);  // don't consume event, even if motion
+   return( event);  // don't consume event
 }
 
+@end
 
 //
 // We just copy the layer frame into the quadtree, that way we don't have to
@@ -118,7 +133,7 @@ static void   buildQuadTree( struct mulle_pointerarray *layers,
                              struct mulle_quadtree *quadtree)
 {
    struct mulle_pointerarrayenumerator   rover;
-   CALayer                               *layer;
+   CGGraphicsLayer                       *layer;
 
    rover = mulle_pointerarray_enumerate( layers);
    while( _mulle_pointerarrayenumerator_next( &rover, (void **) &layer))
@@ -140,8 +155,8 @@ static void   buildQuadTree( struct mulle_pointerarray *layers,
 // during animation. Or would post animations be better ?
 //
 #ifdef USE_QUADTREE
-static void   windowDidLayout( UIWindow *window,
-                               struct CGFrameInfo *info)
+static void   windowDidLayoutViews( UIWindow *window,
+                                    struct CGFrameInfo *info)
 {
    UIView   *contentPlane;
 
@@ -159,7 +174,7 @@ static void   windowDidLayout( UIWindow *window,
 static void   setupSceneInView( UIView *contentPlane)
 {
    CABasicAnimation                 *animation;
-   CALayer                          *layer;
+   CGGraphicsLayer                  *layer;
    CGRect                           frame;
    CGRect                           srcRect;
    CGRect                           dstRect;
@@ -167,9 +182,9 @@ static void   setupSceneInView( UIView *contentPlane)
    struct CABasicAnimationOptions   options;
 
    options = CABasicAnimationOptionsMakeCurve( mulle_relativetimerange_make( 0, 2.0),
+                                               CAAnimationCurveEaseOut,
                                                INFINITY,
-                                               CAAnimationReverses,
-                                               CAAnimationCurveEaseOut);
+                                               YES);
 
    frame = [contentPlane contentRect];
    frame = UIEdgeInsetsInsetRect( frame, UIEdgeInsetsMake( 10, 10, 10, 10));
@@ -180,7 +195,7 @@ static void   setupSceneInView( UIView *contentPlane)
       srcRect  = CGRectMakeRandomInRect( frame, CGSizeMake( 5, 5), CGSizeMake( 20, 20));
       dstRect  = CGRectMakeRandomInRect( frame, CGSizeMake( 5, 5), CGSizeMake( 20, 20));
 
-      layer = [CALayer layerWithFrame:srcRect];
+      layer = [CGGraphicsLayer layerWithFrame:srcRect];
 //   printf( "hue: %.2f\n", hue);
       [layer setBackgroundColor:CGColorMakeWithHSL( 0.0,
                                                    0.0,
@@ -200,19 +215,18 @@ static void   setupSceneInView( UIView *contentPlane)
 
 int   main( int argc, char *argv[])
 {
-   UIWindow        *window;
+   MyWindow        *window;
    UIApplication   *app;
    MulleUIPerf     *perf;
 
    app = [UIApplication sharedInstance];
    {
-      window = [UIWindow windowWithFrame:CGRectMake( 0.0, 0.0, 800.0, 600.0)];
+      window = [MyWindow windowWithFrame:CGRectMake( 0.0, 0.0, 800.0, 600.0)];
       assert( window);
 
       [window setBackgroundColor:CGColorMakeWithRGBA( 1.0, 1.0, 1.0, 1.0)];
-      [window setEventCallback:handleEvent];
       [window setFrameRate:UIWindowFrameRateUnsynced];
-
+      [window setMouseMotionEventsEnabled:YES];
 
 #ifdef USE_QUADTREE
       //
@@ -220,17 +234,18 @@ int   main( int argc, char *argv[])
       // 1000,1 takes forever
       //
       quadtree = mulle_quadtree_create( [[window contentPlane] contentRect], 3, 256, NULL);
-      [window setDidLayoutCallback:windowDidLayout];
+      [window setDidLayoutViewsCallback:windowDidLayoutViews];
 #endif
       setupSceneInView( [window contentPlane]);
+
+      perf = [MulleUIPerf object];
+      [window setFrameDelegate:perf];
 
       [app addWindow:window];
    }
 
-   perf = [MulleUIPerf object];
-   [window setFrameDelegate:perf];
 
-   return( [app run]);
+   return( [app runApp]);
 }
 
 
