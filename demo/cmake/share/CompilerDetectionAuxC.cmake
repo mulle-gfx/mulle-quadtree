@@ -12,7 +12,8 @@ if( NOT __COMPILER_DETECTION_AUX_C_CMAKE__)
    #
    # Detect if compiling with mulle-clang
    #
-   if( MULLE_C_COMPILER_ID MATCHES "MulleClang" OR "$ENV{CC}" MATCHES ".*mulle-cl.*")
+   if( MULLE_C_COMPILER_ID MATCHES "MULLECLANG" OR "$ENV{CC}" MATCHES ".*mulle-cl.*")
+      message( STATUS "MulleClang compiler detected")
       set( MULLE_OBJC ON)
    else()
       set( MULLE_OBJC OFF)
@@ -21,9 +22,3 @@ if( NOT __COMPILER_DETECTION_AUX_C_CMAKE__)
    include( CompilerDetectionAuxObjC OPTIONAL)
 
 endif()
-
-
-# extension : mulle-objc/objc-cmake
-# directory : project/all
-# template  : .../CompilerDetectionAuxC.cmake
-# Suppress this comment with `export MULLE_SDE_GENERATE_FILE_COMMENTS=NO`

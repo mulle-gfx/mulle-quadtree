@@ -15,40 +15,40 @@ if( NOT __ENVIRONMENT__CMAKE__)
    include( StringCase)
 
    if( NOT PROJECT_IDENTIFIER)
-      string( MAKE_C_IDENTIFIER "${PROJECT_NAME}" PROJECT_IDENTIFIER)
+      snakeCaseString( "${PROJECT_NAME}" PROJECT_IDENTIFIER)
    endif()
    if( NOT PROJECT_UPCASE_IDENTIFIER)
-      snakeCaseString( "${PROJECT_IDENTIFIER}" PROJECT_UPCASE_IDENTIFIER)
-      string( TOUPPER "${PROJECT_UPCASE_IDENTIFIER}" PROJECT_UPCASE_IDENTIFIER)
+      string( TOUPPER "${PROJECT_IDENTIFIER}" PROJECT_UPCASE_IDENTIFIER)
    endif()
    if( NOT PROJECT_DOWNCASE_IDENTIFIER)
-      snakeCaseString( "${PROJECT_IDENTIFIER}" PROJECT_DOWNCASE_IDENTIFIER)
-      string( TOLOWER "${PROJECT_DOWNCASE_IDENTIFIER}" PROJECT_DOWNCASE_IDENTIFIER)
+      string( TOLOWER "${PROJECT_IDENTIFIER}" PROJECT_DOWNCASE_IDENTIFIER)
    endif()
 
    if( NOT MULLE_VIRTUAL_ROOT)
       set( MULLE_VIRTUAL_ROOT "$ENV{MULLE_VIRTUAL_ROOT}")
       if( NOT MULLE_VIRTUAL_ROOT)
-         set( MULLE_VIRTUAL_ROOT "${PROJECT_SOURCE_DIR}")
+         set( MULLE_VIRTUAL_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
       endif()
    endif()
+   file( TO_CMAKE_PATH ${MULLE_VIRTUAL_ROOT} MULLE_VIRTUAL_ROOT)
 
-   if( NOT DEPENDENCY_DIR)
-      set( DEPENDENCY_DIR "$ENV{DEPENDENCY_DIR}")
-      if( NOT DEPENDENCY_DIR)
-         set( DEPENDENCY_DIR "${MULLE_VIRTUAL_ROOT}/dependency")
+   macro( mulle_append_unique_existing_path list_name item)
+      set( item_index -1) # supposedly makes local
+      list( FIND ${list_name} "${item}" item_index)
+      if( ${item_index} EQUAL -1)
+         if( NOT EXISTS "${item}")
+            list( APPEND ${list_name} "${item}")
+         endif()
       endif()
-   endif()
+   endmacro()
 
-   if( NOT ADDICTION_DIR)
-      set( ADDICTION_DIR "$ENV{ADDICTION_DIR}")
-      if( NOT ADDICTION_DIR)
-         set( ADDICTION_DIR "${MULLE_VIRTUAL_ROOT}/addiction")
-      endif()
-   endif()
+   macro( mulle_append_list list_name other_list)
+      set( item "") # supposedly makes local
+      foreach( item ${${other_list}})
+         list( APPEND ${list_name} "${item}")
+      endforeach()
+   endmacro()
 
-   message( STATUS "DEPENDENCY_DIR=${DEPENDENCY_DIR}")
-   message( STATUS "ADDICTION_DIR=${ADDICTION_DIR}")
 
    #
    # MULLE_SDK is dependency/addiction. Not sysroot!
@@ -57,53 +57,121 @@ if( NOT __ENVIRONMENT__CMAKE__)
    # MULLE_SDK_PATH is set by mulle-craft and usually looks like the
    # default set below. But! If you are using --sdk --platform
    # distinctions, the paths will be different
+   #
+   # Slight change. MULLE_SDK_PATH contains now addiction_dir
+   # and depedency_dir, but nothing else. The configuration/sdk/platform
+   # is passed in MULLE_SDK_SUBDIR
+   #
    if( NOT MULLE_SDK_PATH)
       string( REPLACE ":" ";" MULLE_SDK_PATH "$ENV{MULLE_SDK_PATH}")
+   endif()
 
-      if( NOT MULLE_SDK_PATH)
-         set( MULLE_SDK_PATH
-            "${DEPENDENCY_DIR}"
-            "${ADDICTION_DIR}"
-         )
+   # if no MULLE_SDK_PATH is given, assume its not a mulle-sde build
+   # in that case it's probably just cmake, so it would probably be bad to
+   # not pick up dependencies installed into the system, by default
+   if( MULLE_SDK_PATH)
+      list( GET MULLE_SDK_PATH 0 DEPENDENCY_DIR)
+      list( GET MULLE_SDK_PATH 1 ADDICTION_DIR)
+
+      option( DEPENDENCY_IGNORE_SYSTEM_LIBARIES "Ignore system library paths in search for dependencies" ON)
+      if( NOT DEPENDENCY_IGNORE_SYSTEM_LIBARIES)
+         message( WARNING "Will also search system paths for dependencies, as MULLE_SDK_PATH is not set")
       endif()
    else()
-      # temporary fix until mulle-objc 0.16 release
-      if( NOT ("$ENV{MULLE_MAKE_VERSION}" STREQUAL ""))
-         if( "$ENV{MULLE_MAKE_VERSION}" VERSION_LESS 0.14.0)
-            string( REPLACE ":" ";" MULLE_SDK_PATH "${MULLE_SDK_PATH}")
+      if( NOT MULLE_SDK_SUBDIR)
+         set( MULLE_SDK_SUBDIR "${CMAKE_BUILD_TYPE}")
+      endif()
+      if( NOT MULLE_SDK_SUBDIR)
+         set( MULLE_SDK_SUBDIR "Debug")
+      endif()
+      option( DEPENDENCY_IGNORE_SYSTEM_LIBARIES "Ignore system library paths in search for dependencies" OFF)
+   endif()
+
+   if( NOT DEPENDENCY_DIR)
+      set( DEPENDENCY_DIR "$ENV{DEPENDENCY_DIR}")
+      if( NOT DEPENDENCY_DIR)
+         find_program( MULLE_SDE mulle-sde)
+         if( MULLE_SDE)
+            execute_process(
+               OUTPUT_VARIABLE DEPENDENCY_DIR
+               COMMAND ${MULLE_SDE} dependency-dir
+               OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+         endif()
+         if( NOT DEPENDENCY_DIR)
+            set( DEPENDENCY_DIR "${MULLE_VIRTUAL_ROOT}/dependency")
          endif()
       endif()
    endif()
+
+   # needed for windows
+   file( TO_CMAKE_PATH ${DEPENDENCY_DIR} DEPENDENCY_DIR)
+   list( APPEND ADDITIONAL_BIN_PATH "${DEPENDENCY_DIR}/bin")
+
+   if( NOT ADDICTION_DIR)
+      set( ADDICTION_DIR "$ENV{ADDICTION_DIR}")
+      if( NOT ADDICTION_DIR)
+         find_program( MULLE_SDE mulle-sde)
+         if( MULLE_SDE)
+            execute_process(
+               OUTPUT_VARIABLE ADDICTION_DIR
+               COMMAND ${MULLE_SDE} addiction-dir
+               OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+         endif()
+         if( NOT ADDICTION_DIR)
+            set( ADDICTION_DIR "${MULLE_VIRTUAL_ROOT}/addiction")
+         endif()
+      endif()
+   endif()
+
+   # if ADDICTION_DIR is not present get rid of it from search paths
+   if( EXISTS "${ADDICTION_DIR}")
+      set( MULLE_SDK_PATH
+         "${DEPENDENCY_DIR}"
+         "${ADDICTION_DIR}")
+
+      # needed for windows
+      file( TO_CMAKE_PATH ${ADDICTION_DIR} ADDICTION_DIR)
+      list( APPEND ADDITIONAL_BIN_PATH "${ADDICTION_DIR}/bin")
+      message( STATUS "ADDICTION_DIR=\"${ADDICTION_DIR}\"")
+   else()
+      message( STATUS "ADDICTION_DIR not present, therefore ignored")
+
+      unset( ADDICTION_DIR)
+      set( MULLE_SDK_PATH "${DEPENDENCY_DIR}")
+   endif()
+
+
+   # where the output is installed by other dependencies
+   set( MULLE_SDK_DEPENDENCY_DIR "${DEPENDENCY_DIR}/${MULLE_SDK_SUBDIR}")
 
    set( TMP_INCLUDE_DIRS)
    set( TMP_CMAKE_INCLUDE_PATH)
    set( TMP_CMAKE_LIBRARY_PATH)
    set( TMP_CMAKE_FRAMEWORK_PATH)
 
-   ###
-   ### If you build DEBUG craftorder, but want RELEASE interspersed, so that
-   ### the debugger doesn't trace through too much fluff, then set the
-   ### FALLBACK_BUILD_TYPE (for lack of a better name)
-   ###
-   ### TODO: reenable later
-   ###
-   # if( NOT FALLBACK_BUILD_TYPE)
-   #    set( FALLBACK_BUILD_TYPE "$ENV{ORACLE_EO_ADAPTOR_FALLBACK_BUILD_TYPE}")
-   #    if( NOT FALLBACK_BUILD_TYPE)
-   #       set( FALLBACK_BUILD_TYPE "$ENV{FALLBACK_BUILD_TYPE}")
-   #    endif()
-   #    if( NOT FALLBACK_BUILD_TYPE)
-   #       set( FALLBACK_BUILD_TYPE "Debug")
-   #    endif()
-   # endif()
-   #
-   # if( FALLBACK_BUILD_TYPE STREQUAL "Release")
-   #    unset( FALLBACK_BUILD_TYPE)
-   # endif()
-   message( STATUS "MULLE_SDK_PATH=${MULLE_SDK_PATH}")
+   message( STATUS "MULLE_SDK_PATH=\"${MULLE_SDK_PATH}\"")
+   message( STATUS "MULLE_SDK_FALLBACK_SUBDIR=\"${MULLE_SDK_FALLBACK_SUBDIR}\"")
+   message( STATUS "MULLE_SDK_SUBDIR=\"${MULLE_SDK_SUBDIR}\"")
+   message( STATUS "MULLE_SDK_DEPENDENCY_DIR=\"${MULLE_SDK_DEPENDENCY_DIR}\"")
 
    foreach( TMP_MULLE_SDK_PATH ${MULLE_SDK_PATH})
-      message( STATUS "TMP_MULLE_SDK_PATH=${TMP_MULLE_SDK_PATH}")
+      set( TMP_MULLE_SDK_FALLBACK_PATH "${TMP_MULLE_SDK_PATH}")
+      # keep pretty
+      if( MULLE_SDK_FALLBACK_SUBDIR)
+         set( TMP_MULLE_SDK_FALLBACK_PATH "${TMP_MULLE_SDK_FALLBACK_PATH}/${MULLE_SDK_FALLBACK_SUBDIR}")
+      endif()
+      if( MULLE_SDK_SUBDIR)
+         set( TMP_MULLE_SDK_PATH "${TMP_MULLE_SDK_PATH}/${MULLE_SDK_SUBDIR}")
+      endif()
+
+      message( STATUS "TMP_MULLE_SDK_PATH=\"${TMP_MULLE_SDK_PATH}\"")
+      message( STATUS "TMP_MULLE_SDK_FALLBACK_PATH=\"${TMP_MULLE_SDK_FALLBACK_PATH}\"")
+
+      list( APPEND ADDITIONAL_BIN_PATH "${TMP_MULLE_SDK_PATH}/bin")
+      list( APPEND ADDITIONAL_BIN_PATH "${TMP_MULLE_SDK_FALLBACK_PATH}/bin")
+
       #
       # Add build-type includes/libs first
       # Add Release as a fallback afterwards
@@ -115,90 +183,63 @@ if( NOT __ENVIRONMENT__CMAKE__)
       # We always prepend to "override" inherited values, so
       # the order seems reversed
       #
-      if( EXISTS "${TMP_MULLE_SDK_PATH}")
 
-         set( TMP_PREFIX "${TMP_MULLE_SDK_PATH}")
+      # Get the target triplet
+      # On Unix, we add this to the search path on linux, for addictions that
+      # install debian style. For dependencies that misbehave, use dispensing,
+      # to copy the file to the right place: mulle-sde dep mark <x> no-inplace
+      #
+      set( MULLE_TARGET_TRIPLE "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}-${CMAKE_CXX_COMPILER_ID}")
+      string( TOLOWER "${MULLE_TARGET_TRIPLE}" TARGET_TRIPLET_LOWER)
 
-         #
-         # add build type unconditionally if not Release
-         #
-         if( CMAKE_BUILD_TYPE)
-            if( NOT (CMAKE_BUILD_TYPE STREQUAL "Release"))
-               set( TMP_CMAKE_INCLUDE_PATH
-                  ${TMP_CMAKE_INCLUDE_PATH}
-                  "${TMP_PREFIX}/${CMAKE_BUILD_TYPE}/include"
-               )
-               set( TMP_INCLUDE_DIRS
-                  ${TMP_INCLUDE_DIRS}
-                  "${TMP_PREFIX}/${CMAKE_BUILD_TYPE}/include"
-               )
-
-               set( TMP_CMAKE_LIBRARY_PATH
-                  ${TMP_CMAKE_LIBRARY_PATH}
-                  "${TMP_PREFIX}/${CMAKE_BUILD_TYPE}/lib"
-               )
-               set( TMP_CMAKE_FRAMEWORK_PATH
-                  ${TMP_CMAKE_FRAMEWORK_PATH}
-                  "${TMP_PREFIX}/${CMAKE_BUILD_TYPE}/Frameworks"
-               )
-            endif()
+      #
+      # add build type unconditionally if not Release, these directories
+      # might every well "pop up" during the cmake build, so don't go
+      # for existing path (could check so)
+      #
+      if( "${TMP_MULLE_SDK_PATH}" MATCHES "^${DEPENDENCY_DIR}.*")
+         list( APPEND TMP_CMAKE_INCLUDE_PATH "${TMP_MULLE_SDK_PATH}/include")
+         list( APPEND TMP_INCLUDE_DIRS "${TMP_MULLE_SDK_PATH}/include")
+         list( APPEND TMP_CMAKE_LIBRARY_PATH "${TMP_MULLE_SDK_PATH}/lib")
+         list( APPEND TMP_CMAKE_FRAMEWORK_PATH "${TMP_MULLE_SDK_PATH}/Frameworks")
+      else()
+         mulle_append_unique_existing_path( TMP_CMAKE_INCLUDE_PATH "${TMP_MULLE_SDK_PATH}/include")
+         mulle_append_unique_existing_path( TMP_INCLUDE_DIRS "${TMP_MULLE_SDK_PATH}/include")
+         mulle_append_unique_existing_path( TMP_CMAKE_LIBRARY_PATH "${TMP_MULLE_SDK_PATH}/lib")
+         if( UNIX)
+            mulle_append_unique_existing_path( TMP_CMAKE_LIBRARY_PATH "${TMP_MULLE_SDK_PATH}/lib/${MULLE_TARGET_TRIPLE}")
          endif()
+         mulle_append_unique_existing_path( TMP_CMAKE_FRAMEWORK_PATH "${TMP_MULLE_SDK_PATH}/Frameworks")
+      endif()
 
-         #
-         # add release as fallback always
-         #
-         set( TMP_SDK_RELEASE_PATH "${TMP_PREFIX}/Release")
-         if( NOT EXISTS "${TMP_SDK_RELEASE_PATH}")
-            set( TMP_SDK_RELEASE_PATH "${TMP_PREFIX}")
-         endif()
-
-         message( STATUS "TMP_SDK_RELEASE_PATH=${TMP_SDK_RELEASE_PATH}")
-         if( EXISTS "${TMP_SDK_RELEASE_PATH}/include")
-            message( STATUS "TMP_SDK_RELEASE_PATH=${TMP_SDK_RELEASE_PATH}/include exists")
-         else()
-            message( STATUS "TMP_SDK_RELEASE_PATH=${TMP_SDK_RELEASE_PATH}/include does not exist")
-         endif()
-
-         if( EXISTS "${TMP_SDK_RELEASE_PATH}/include")
-            set( TMP_CMAKE_INCLUDE_PATH
-               ${TMP_CMAKE_INCLUDE_PATH}
-               "${TMP_SDK_RELEASE_PATH}/include"
-            )
-            set( TMP_INCLUDE_DIRS
-               ${TMP_INCLUDE_DIRS}
-               "${TMP_SDK_RELEASE_PATH}/include"
-            )
-         endif()
-
-         if( EXISTS "${TMP_SDK_RELEASE_PATH}/lib")
-            set( TMP_CMAKE_LIBRARY_PATH
-               ${TMP_CMAKE_LIBRARY_PATH}
-               "${TMP_SDK_RELEASE_PATH}/lib"
-            )
-         endif()
-         if( EXISTS "${TMP_SDK_RELEASE_PATH}/Frameworks")
-            set( TMP_CMAKE_FRAMEWORK_PATH
-               "${TMP_SDK_RELEASE_PATH}/Frameworks"
-               ${TMP_CMAKE_FRAMEWORK_PATH}
-            )
-         endif()
-
-         unset( TMP_SDK_RELEASE_PATH)
+      #
+      # add release as fallback if not same as above
+      #
+      if( NOT "${TMP_MULLE_SDK_FALLBACK_PATH}" STREQUAL "${TMP_MULLE_SDK_PATH}")
+         mulle_append_unique_existing_path( TMP_CMAKE_INCLUDE_PATH "${TMP_MULLE_SDK_FALLBACK_PATH}/include")
+         mulle_append_unique_existing_path( TMP_INCLUDE_DIRS "${TMP_MULLE_SDK_FALLBACK_PATH}/include")
+         mulle_append_unique_existing_path( TMP_CMAKE_LIBRARY_PATH "${TMP_MULLE_SDK_FALLBACK_PATH}/lib")
+         mulle_append_unique_existing_path( TMP_CMAKE_FRAMEWORK_PATH "${TMP_MULLE_SDK_FALLBACK_PATH}/Frameworks")
       endif()
    endforeach()
 
-   set( CMAKE_INCLUDE_PATH
-      ${TMP_CMAKE_INCLUDE_PATH}
-      ${CMAKE_INCLUDE_PATH}
-   )
-   set( CMAKE_LIBRARY_PATH
-      ${TMP_CMAKE_LIBRARY_PATH}
-      ${CMAKE_LIBRARY_PATH}
-   )
-   set( CMAKE_FRAMEWORK_PATH
-      ${TMP_CMAKE_FRAMEWORK_PATH}
-      ${CMAKE_FRAMEWORK_PATH}
-   )
+
+   # memo used to do list remove duplicates here
+   mulle_append_list( TMP_CMAKE_INCLUDE_PATH CMAKE_INCLUDE_PATH)
+   list( REMOVE_DUPLICATES TMP_CMAKE_INCLUDE_PATH)
+   set( CMAKE_INCLUDE_PATH "${TMP_CMAKE_INCLUDE_PATH}")
+
+   mulle_append_list( TMP_CMAKE_INCLUDE_PATH CMAKE_LIBRARY_PATH)
+   list( REMOVE_DUPLICATES TMP_CMAKE_LIBRARY_PATH)
+   set( CMAKE_LIBRARY_PATH "${TMP_CMAKE_LIBRARY_PATH}")
+
+   mulle_append_list( TMP_CMAKE_FRAMEWORK_PATH CMAKE_FRAMEWORK_PATH)
+   list( REMOVE_DUPLICATES TMP_CMAKE_FRAMEWORK_PATH)
+   set( CMAKE_FRAMEWORK_PATH "${TMP_CMAKE_FRAMEWORK_PATH}")
+
+   list( REMOVE_DUPLICATES ADDITIONAL_BIN_PATH)
+   list( REMOVE_DUPLICATES TMP_INCLUDE_DIRS)
+
 
    # these generate -isystem arguments, that add to the system search path
    # if we use BEFORE we would need to reverse the order in TMP_INCLUDE_DIRS
@@ -209,10 +250,12 @@ if( NOT __ENVIRONMENT__CMAKE__)
    message( STATUS "CMAKE_INCLUDE_PATH=\"${CMAKE_INCLUDE_PATH}\"" )
    message( STATUS "CMAKE_LIBRARY_PATH=\"${CMAKE_LIBRARY_PATH}\"" )
    message( STATUS "INCLUDE_DIRS=\"${TMP_INCLUDE_DIRS}\"" )
+   message( STATUS "ADDITIONAL_BIN_PATH=\"${ADDITIONAL_BIN_PATH}\"")
 
    # given from outside
    message( STATUS "CMAKE_PREFIX_PATH=\"${CMAKE_PREFIX_PATH}\"" )
    message( STATUS "CMAKE_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\"" )
+   message( STATUS "MULLE_TARGET_TRIPLE=\"${MULLE_TARGET_TRIPLE}\"" )
    # message( STATUS "TMP_INCLUDE_DIRS=\"${TMP_INCLUDE_DIRS}\"" )
 
    # not sure why cmake doesn't do this itself, we only add the custom
@@ -224,7 +267,6 @@ if( NOT __ENVIRONMENT__CMAKE__)
       endforeach()
       unset( TMP_FRAMEWORK_PATH)
    endif()
-
 
    #
    # add "d" to library names on windows MSVC for debugging libraries
@@ -243,9 +285,3 @@ if( NOT __ENVIRONMENT__CMAKE__)
    include( EnvironmentAux OPTIONAL)
 
 endif()
-
-
-# extension : mulle-sde/cmake
-# directory : project/all
-# template  : .../Environment.cmake
-# Suppress this comment with `export MULLE_SDE_GENERATE_FILE_COMMENTS=NO`

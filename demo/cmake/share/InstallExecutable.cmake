@@ -14,8 +14,6 @@ if( LINK_PHASE)
 
    include( PreInstallExecutable OPTIONAL)
 
-   include( InstallRpath OPTIONAL)
-
    install( TARGETS ${INSTALL_EXECUTABLE_TARGETS} DESTINATION "bin")
    foreach( TMP_NAME ${INSTALL_EXECUTABLE_TARGETS})
       string( MAKE_C_IDENTIFIER "${TMP_NAME}" TMP_IDENTIFIER)
@@ -31,9 +29,3 @@ if( LINK_PHASE)
    include( PostInstallExecutable OPTIONAL)
 
 endif()
-
-
-# extension : mulle-sde/cmake
-# directory : project/all
-# template  : .../InstallExecutable.cmake
-# Suppress this comment with `export MULLE_SDE_GENERATE_FILE_COMMENTS=NO`

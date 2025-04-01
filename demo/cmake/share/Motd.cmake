@@ -20,17 +20,17 @@ if( EXECUTABLE_NAME AND LINK_PHASE)
       if( MSVC)
          # TODO: adapt search path
          find_program( CREATE_MOTD_EXE mulle-create-build-motd.bat
-            PATHS "${MULLE_VIRTUAL_ROOT}/.mulle/var/$ENV{MULLE_HOSTNAME}/env/bin"
+            PATHS "${MULLE_VIRTUAL_ROOT}/.mulle/var/$ENV{MULLE_HOSTNAME}/$ENV{MULLE_USERNAME}/env/bin"
          )
       else()
          # will fail on WSL if .mulle/var is elsewhere`. should get
          # location from `mulle-env vardir env`
          find_program( CREATE_MOTD_EXE mulle-create-build-motd
-            PATHS "${MULLE_VIRTUAL_ROOT}/.mulle/var/$ENV{MULLE_HOSTNAME}/env/bin"
+            PATHS "${MULLE_VIRTUAL_ROOT}/.mulle/var/$ENV{MULLE_HOSTNAME}/$ENV{MULLE_USERNAME}/env/bin"
          )
       endif()
+      message( STATUS "CREATE_MOTD_EXE is ${CREATE_MOTD_EXE}")
    endif()
-
 
    #
    # there is no real order, in which these motds are generated
@@ -38,34 +38,31 @@ if( EXECUTABLE_NAME AND LINK_PHASE)
    #
    if( CREATE_MOTD_EXE)
       if( NOT TARGET "__cleanmotd__")
-         add_custom_target( "__cleanmotd__" ALL
-            COMMAND "test" "!" "-f" "${CMAKE_BINARY_DIR}/.motd" "||" "rm" "${CMAKE_BINARY_DIR}/.motd"
+         add_custom_target( "__cleanmotd__"
+            COMMAND env "PATH=/usr/bin:/bin" "test" "!" "-f" "${CMAKE_CURRENT_BINARY_DIR}/.motd"
+                        "||" "rm" "${CMAKE_CURRENT_BINARY_DIR}/.motd"
             COMMENT "Remove old motd file for mulle-craft"
             VERBATIM
          )
       endif()
-      add_dependencies( "${EXECUTABLE_NAME}" "__cleanmotd__")
 
-      add_custom_target( "${EXECUTABLE_NAME}__motd__" ALL
+      add_custom_target( "_${EXECUTABLE_NAME}__motd__" ALL
          COMMAND ${CMAKE_COMMAND} -E env "MULLE_VIRTUAL_ROOT=${MULLE_VIRTUAL_ROOT}"
                         "${CREATE_MOTD_EXE}"
                         $ENV{CREATE_BUILD_MOTD_FLAGS}
                         "--append"
                      "executable"
-                        "${CMAKE_BINARY_DIR}"
+                        "${CMAKE_CURRENT_BINARY_DIR}"
                         "${EXECUTABLE_NAME}"
          COMMENT "Append to motd file for mulle-craft"
          VERBATIM
       )
 
-      add_dependencies( "${EXECUTABLE_NAME}__motd__" ${EXECUTABLE_NAME})
+      add_dependencies( "_${EXECUTABLE_NAME}__motd__" ${EXECUTABLE_NAME})
+      add_dependencies( "_${EXECUTABLE_NAME}__motd__" "__cleanmotd__")
+   else()
+      message( WARNING "Tool \"mulle-create-build-motd\" not found")
    endif()
 
    include( MotdAux OPTIONAL)
 endif()
-
-
-# extension : mulle-sde/cmake
-# directory : project/all
-# template  : .../Motd.cmake
-# Suppress this comment with `export MULLE_SDE_GENERATE_FILE_COMMENTS=NO`

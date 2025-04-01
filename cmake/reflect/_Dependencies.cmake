@@ -17,64 +17,68 @@ endif()
 # Disable for this platform: `mulle-sourcetree mark mulle-geometry no-cmake-platform-${MULLE_UNAME}`
 # Disable for a sdk: `mulle-sourcetree mark mulle-geometry no-cmake-sdk-<name>`
 #
-if( NOT MULLE__GEOMETRY_LIBRARY)
-   find_library( MULLE__GEOMETRY_LIBRARY NAMES
-      ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}
-      ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-geometry${CMAKE_STATIC_LIBRARY_SUFFIX}
-      mulle-geometry
-      NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH
-   )
-   if( NOT MULLE__GEOMETRY_LIBRARY AND NOT DEPENDENCY_IGNORE_SYSTEM_LIBARIES)
+if( COLLECT_DEPENDENCY_LIBRARIES_AS_NAMES)
+   list( APPEND DEPENDENCY_LIBRARIES "mulle-geometry")
+else()
+   if( NOT MULLE__GEOMETRY_LIBRARY)
       find_library( MULLE__GEOMETRY_LIBRARY NAMES
          ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}
          ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-geometry${CMAKE_STATIC_LIBRARY_SUFFIX}
          mulle-geometry
+         NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH
       )
-   endif()
-   message( STATUS "MULLE__GEOMETRY_LIBRARY is ${MULLE__GEOMETRY_LIBRARY}")
-   #
-   # The order looks ascending, but due to the way this file is read
-   # it ends up being descending, which is what we need.
-   #
-   if( MULLE__GEOMETRY_LIBRARY)
+      if( NOT MULLE__GEOMETRY_LIBRARY AND NOT DEPENDENCY_IGNORE_SYSTEM_LIBARIES)
+         find_library( MULLE__GEOMETRY_LIBRARY NAMES
+            ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}
+            ${CMAKE_STATIC_LIBRARY_PREFIX}mulle-geometry${CMAKE_STATIC_LIBRARY_SUFFIX}
+            mulle-geometry
+         )
+      endif()
+      message( STATUS "MULLE__GEOMETRY_LIBRARY is ${MULLE__GEOMETRY_LIBRARY}")
       #
-      # Add MULLE__GEOMETRY_LIBRARY to DEPENDENCY_LIBRARIES list.
-      # Disable with: `mulle-sourcetree mark mulle-geometry no-cmake-add`
+      # The order looks ascending, but due to the way this file is read
+      # it ends up being descending, which is what we need.
       #
-      list( APPEND DEPENDENCY_LIBRARIES ${MULLE__GEOMETRY_LIBRARY})
-      #
-      # Inherit information from dependency.
-      # Encompasses: no-cmake-searchpath,no-cmake-dependency,no-cmake-loader
-      # Disable with: `mulle-sourcetree mark mulle-geometry no-cmake-inherit`
-      #
-      # temporarily expand CMAKE_MODULE_PATH
-      get_filename_component( _TMP_MULLE__GEOMETRY_ROOT "${MULLE__GEOMETRY_LIBRARY}" DIRECTORY)
-      get_filename_component( _TMP_MULLE__GEOMETRY_ROOT "${_TMP_MULLE__GEOMETRY_ROOT}" DIRECTORY)
-      #
-      #
-      # Search for "Definitions.cmake" and "DependenciesAndLibraries.cmake" to include.
-      # Disable with: `mulle-sourcetree mark mulle-geometry no-cmake-dependency`
-      #
-      foreach( _TMP_MULLE__GEOMETRY_NAME "mulle-geometry")
-         set( _TMP_MULLE__GEOMETRY_DIR "${_TMP_MULLE__GEOMETRY_ROOT}/include/${_TMP_MULLE__GEOMETRY_NAME}/cmake")
-         # use explicit path to avoid "surprises"
-         if( IS_DIRECTORY "${_TMP_MULLE__GEOMETRY_DIR}")
-            list( INSERT CMAKE_MODULE_PATH 0 "${_TMP_MULLE__GEOMETRY_DIR}")
-            #
-            include( "${_TMP_MULLE__GEOMETRY_DIR}/DependenciesAndLibraries.cmake" OPTIONAL)
-            #
-            list( REMOVE_ITEM CMAKE_MODULE_PATH "${_TMP_MULLE__GEOMETRY_DIR}")
-            #
-            unset( MULLE__GEOMETRY_DEFINITIONS)
-            include( "${_TMP_MULLE__GEOMETRY_DIR}/Definitions.cmake" OPTIONAL)
-            list( APPEND INHERITED_DEFINITIONS ${MULLE__GEOMETRY_DEFINITIONS})
-            break()
-         else()
-            message( STATUS "${_TMP_MULLE__GEOMETRY_DIR} not found")
-         endif()
-      endforeach()
-   else()
-      # Disable with: `mulle-sourcetree mark mulle-geometry no-require-link`
-      message( FATAL_ERROR "MULLE__GEOMETRY_LIBRARY was not found")
+      if( MULLE__GEOMETRY_LIBRARY)
+         #
+         # Add MULLE__GEOMETRY_LIBRARY to DEPENDENCY_LIBRARIES list.
+         # Disable with: `mulle-sourcetree mark mulle-geometry no-cmake-add`
+         #
+         list( APPEND DEPENDENCY_LIBRARIES ${MULLE__GEOMETRY_LIBRARY})
+         #
+         # Inherit information from dependency.
+         # Encompasses: no-cmake-searchpath,no-cmake-dependency,no-cmake-loader
+         # Disable with: `mulle-sourcetree mark mulle-geometry no-cmake-inherit`
+         #
+         # temporarily expand CMAKE_MODULE_PATH
+         get_filename_component( _TMP_MULLE__GEOMETRY_ROOT "${MULLE__GEOMETRY_LIBRARY}" DIRECTORY)
+         get_filename_component( _TMP_MULLE__GEOMETRY_ROOT "${_TMP_MULLE__GEOMETRY_ROOT}" DIRECTORY)
+         #
+         #
+         # Search for "Definitions.cmake" and "DependenciesAndLibraries.cmake" to include.
+         # Disable with: `mulle-sourcetree mark mulle-geometry no-cmake-dependency`
+         #
+         foreach( _TMP_MULLE__GEOMETRY_NAME "mulle-geometry")
+            set( _TMP_MULLE__GEOMETRY_DIR "${_TMP_MULLE__GEOMETRY_ROOT}/include/${_TMP_MULLE__GEOMETRY_NAME}/cmake")
+            # use explicit path to avoid "surprises"
+            if( IS_DIRECTORY "${_TMP_MULLE__GEOMETRY_DIR}")
+               list( INSERT CMAKE_MODULE_PATH 0 "${_TMP_MULLE__GEOMETRY_DIR}")
+               #
+               include( "${_TMP_MULLE__GEOMETRY_DIR}/DependenciesAndLibraries.cmake" OPTIONAL)
+               #
+               list( REMOVE_ITEM CMAKE_MODULE_PATH "${_TMP_MULLE__GEOMETRY_DIR}")
+               #
+               unset( MULLE__GEOMETRY_DEFINITIONS)
+               include( "${_TMP_MULLE__GEOMETRY_DIR}/Definitions.cmake" OPTIONAL)
+               list( APPEND INHERITED_DEFINITIONS ${MULLE__GEOMETRY_DEFINITIONS})
+               break()
+            else()
+               message( STATUS "${_TMP_MULLE__GEOMETRY_DIR} not found")
+            endif()
+         endforeach()
+      else()
+         # Disable with: `mulle-sourcetree mark mulle-geometry no-require-link`
+         message( SEND_ERROR "MULLE__GEOMETRY_LIBRARY was not found")
+      endif()
    endif()
 endif()

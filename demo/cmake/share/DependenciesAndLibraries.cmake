@@ -19,22 +19,6 @@ include( _Libraries OPTIONAL)
 #
 if( IS_DIRECTORY "${DEPENDENCY_DIR}")
    include( _Dependencies OPTIONAL)
+else()
+   message( STATUS "DEPENDENCY_DIR \"${DEPENDENCY_DIR}\" is missing, so no dependencies")
 endif()
-
-#
-# This is an experiment to have "flat" headers. I don't use it though (yet)
-#
-option( INHERIT_DEPENDENCY_INCLUDES "Make headers of dependencies available as local headers" OFF)
-
-if( INHERIT_DEPENDENCY_INCLUDES)
-   # message( STATUS "INHERITED_INCLUDE_DIRS=\"${INHERITED_INCLUDE_DIRS}\"" )
-
-   # these generate -I arguments, that add to the user search path
-   include_directories( ${INHERITED_INCLUDE_DIRS})
-endif()
-
-
-# extension : mulle-sde/cmake
-# directory : project/all
-# template  : .../DependenciesAndLibraries.cmake
-# Suppress this comment with `export MULLE_SDE_GENERATE_FILE_COMMENTS=NO`

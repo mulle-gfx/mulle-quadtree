@@ -14,24 +14,38 @@ endif()
 
 # this is the second part, the option is in DefineLoaderIncObjC.cmake
 
+# need this outside of the if
+if( NOT LIBRARY_NAME)
+   set( LIBRARY_NAME "${PROJECT_NAME}")
+endif()
+
+if( NOT OBJC_LOADER_INC)
+   set( OBJC_LOADER_INC "${CMAKE_CURRENT_SOURCE_DIR}/src/reflect/objc-loader.inc")
+endif()
+
+#
+# tricky: this file can only be installed during link phase.
+#         Used by optimization. For musl and cosmopolitan where we don't do
+#         shared libraries, we can not produce this, but we can copy an
+#         existing file.
+if( LINK_PHASE)
+   install( FILES "${OBJC_LOADER_INC}"
+            DESTINATION "include/${LIBRARY_NAME}"
+            OPTIONAL)
+endif()
+
+
 if( CREATE_OBJC_LOADER_INC)
-   if( NOT LIBRARY_NAME)
-      set( LIBRARY_NAME "${PROJECT_NAME}")
-   endif()
-
-   if( NOT LIBRARY_IDENTIFIER)
-      string( MAKE_C_IDENTIFIER "${LIBRARY_NAME}" LIBRARY_IDENTIFIER)
-   endif()
-
    include( StringCase)
 
+   if( NOT LIBRARY_IDENTIFIER)
+      snakeCaseString( "${LIBRARY_NAME}" LIBRARY_IDENTIFIER)
+   endif()
    if( NOT LIBRARY_UPCASE_IDENTIFIER)
-      snakeCaseString( "${LIBRARY_IDENTIFIER}" LIBRARY_UPCASE_IDENTIFIER)
-      string( TOUPPER "${LIBRARY_UPCASE_IDENTIFIER}" LIBRARY_UPCASE_IDENTIFIER)
+      string( TOUPPER "${LIBRARY_IDENTIFIER}" LIBRARY_UPCASE_IDENTIFIER)
    endif()
    if( NOT LIBRARY_DOWNCASE_IDENTIFIER)
-      snakeCaseString( "${LIBRARY_IDENTIFIER}" LIBRARY_DOWNCASE_IDENTIFIER)
-      string( TOLOWER "${LIBRARY_DOWNCASE_IDENTIFIER}" LIBRARY_DOWNCASE_IDENTIFIER)
+      string( TOLOWER "${LIBRARY_IDENTIFIER}" LIBRARY_DOWNCASE_IDENTIFIER)
    endif()
 
    #
@@ -43,16 +57,14 @@ if( CREATE_OBJC_LOADER_INC)
       message( FATAL_ERROR "Executable \"mulle-objc-loader-tool\" not found")
    endif()
 
-   if( NOT OBJC_LOADER_INC)
-      set( OBJC_LOADER_INC "${CMAKE_SOURCE_DIR}/src/reflect/objc-loader.inc")
-   endif()
 
-   # add to headers being installed, not part of project headers though
-   # because it is too late here
-   set( PUBLIC_HEADERS
-      ${PUBLIC_HEADERS}
-      ${OBJC_LOADER_INC}
-   )
+# installed "manually" below
+#   # add to headers being installed, not part of project headers though
+#   # because it is too late here
+#   set( PUBLIC_HEADERS
+#      ${PUBLIC_HEADERS}
+#      ${OBJC_LOADER_INC}
+#   )
    message( STATUS "OBJC_LOADER_INC is \"${OBJC_LOADER_INC}\"")
 
    if( INHERITED_OBJC_LOADERS)
@@ -89,10 +101,11 @@ if( CREATE_OBJC_LOADER_INC)
       )
       target_compile_definitions( ${LIBRARY_STAGE3_TARGET} PRIVATE "${LIBRARY_UPCASE_IDENTIFIER}_BUILD")
 
-      set( STAGE2_HEADERS
-         ${STAGE2_HEADERS}
-         ${OBJC_LOADER_INC}
-      )
+# installed "manually" below
+#      set( STAGE2_HEADERS
+#         ${STAGE2_HEADERS}
+#         ${OBJC_LOADER_INC}
+#      )
    else()
       if( TARGET "_1_${LIBRARY_NAME}")
          message( FATAL_ERROR "_1_${LIBRARY_NAME} is defined, but _2_${LIBRARY_NAME} is missing.
@@ -137,15 +150,15 @@ if( CREATE_OBJC_LOADER_INC)
    #    PROPERTIES GENERATED FALSE
    # )
 
-   add_custom_target( "__objc_loader_inc__"
+   add_custom_target( "${LIBRARY_NAME}__objc_loader_inc__"
       DEPENDS ${OBJC_LOADER_INC}
       COMMENT "Target to build \"${OBJC_LOADER_INC}\""
    )
 
    if( TARGET "_2_${LIBRARY_NAME}")
-      add_dependencies( "_2_${LIBRARY_NAME}" "__objc_loader_inc__")
+      add_dependencies( "_2_${LIBRARY_NAME}" "${LIBRARY_NAME}__objc_loader_inc__")
    else()
-      add_dependencies( "${LIBRARY_NAME}" "__objc_loader_inc__")
+      add_dependencies( "${LIBRARY_NAME}" "${LIBRARY_NAME}__objc_loader_inc__")
    endif()
 
    # seemingly needed
@@ -153,19 +166,6 @@ if( CREATE_OBJC_LOADER_INC)
       set_property( SOURCE ${TMP_STAGE2_SOURCE} APPEND PROPERTY OBJECT_DEPENDS ${OBJC_LOADER_INC})
    endforeach()
 
-   #
-   # tricky: this file can only be installed during link phase.
-   #         Used by optimization.
-   #
-   if( LINK_PHASE)
-      install( FILES "${OBJC_LOADER_INC}" DESTINATION "include/${LIBRARY_NAME}/private")
-   endif()
 endif()
 
 include( CreateLoaderIncAuxObjC OPTIONAL)
-
-
-# extension : mulle-objc/objc-cmake
-# directory : project/all
-# template  : .../CreateLoaderIncObjC.cmake
-# Suppress this comment with `export MULLE_SDE_GENERATE_FILE_COMMENTS=NO`
