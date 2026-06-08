@@ -1,0 +1,3 @@
+before reset: 2
+after reset: 0
+after reinsert: 2

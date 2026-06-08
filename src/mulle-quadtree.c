@@ -3,7 +3,6 @@
 
 #include "mulle-quadtree.h"
 
-#include <stdlib.h>
 #include <string.h>
 
 #include "include-private.h"
@@ -12,13 +11,13 @@
 // A linked list element storing a point and the reference to associated payload
 struct _mulle_quadtree_data
 {
-    struct _mulle_quadtree_data  *next;         // also used by recycling
+    struct _mulle_quadtree_data  *next;
     CGRect                       rect;
     void                         *payload;
 };
 
 struct _mulle_quadtree_node
-{                                                // subnodes[0] also used by recycling
+{
     struct _mulle_quadtree_node   *subnodes[4];  // 0=NW,1=NE,2=SW,3=SE quadrants
     CGRect                        rect;          // Bounding box
     struct _mulle_quadtree_data   *data;         // Pointer to the first rect data (linked list)
@@ -30,25 +29,12 @@ struct mulle_quadtree
 {
    struct _mulle_quadtree_node  *root_node;
    struct mulle_allocator       *allocator;
+   struct mulle_storage         node_storage;
+   struct mulle_storage         data_storage;
    unsigned int                 max_levels;
    unsigned int                 max_rects_per_node;
-
-   /* recycling area */
-   struct _mulle_quadtree_node  *freed_nodes;
-   struct _mulle_quadtree_data  *freed_datas;
 };
 
-
-
-static inline void
-   _mulle_quadtree_node_init( struct _mulle_quadtree_node *n,
-                              CGRect rect,
-                              unsigned int level)
-{
-   memset( n, 0, sizeof( *n));
-   n->rect  = rect;
-   n->level = level;
-}
 
 
 struct _mulle_quadtree_node   *_mulle_quadtree_create_node( struct mulle_quadtree *tree,
@@ -57,13 +43,9 @@ struct _mulle_quadtree_node   *_mulle_quadtree_create_node( struct mulle_quadtre
 {
    struct _mulle_quadtree_node   *n;
 
-   n = tree->freed_nodes;
-   if( ! n)
-      n = mulle_allocator_calloc( tree->allocator, 1, sizeof( struct _mulle_quadtree_node));
-   else
-      tree->freed_nodes = n->subnodes[ 0];
-
-   _mulle_quadtree_node_init( n, rect, level);
+   n = _mulle_storage_calloc( &tree->node_storage);
+   n->rect  = rect;
+   n->level = level;
    return( n);
 }
 
@@ -71,38 +53,17 @@ struct _mulle_quadtree_node   *_mulle_quadtree_create_node( struct mulle_quadtre
 static inline void   _mulle_quadtree_recycle_node( struct mulle_quadtree *tree,
                                                    struct _mulle_quadtree_node *n)
 {
-   n->subnodes[ 0]   = tree->freed_nodes;
-   tree->freed_nodes = n;
-}
-
-
-static inline void   _mulle_quadtree_destroy_node( struct mulle_quadtree *tree,
-                                                   struct _mulle_quadtree_node *n)
-{
-   mulle_allocator_free( tree->allocator, n);
+   _mulle_storage_free( &tree->node_storage, n);
 }
 
 
 /***/
 
-static inline void
-   _mulle_quadtree_data_init( struct _mulle_quadtree_data *d)
-{
-   memset( d, 0, sizeof( *d));
-}
-
-
 struct _mulle_quadtree_data   *_mulle_quadtree_create_data( struct mulle_quadtree *tree)
 {
    struct _mulle_quadtree_data   *d;
 
-   d = tree->freed_datas;
-   if( ! d)
-      d = mulle_allocator_calloc( tree->allocator, 1, sizeof( struct _mulle_quadtree_data));
-   else
-      tree->freed_datas = d->next;
-
-   _mulle_quadtree_data_init( d);
+   d = _mulle_storage_calloc( &tree->data_storage);
    return( d);
 }
 
@@ -110,16 +71,9 @@ struct _mulle_quadtree_data   *_mulle_quadtree_create_data( struct mulle_quadtre
 static void   _mulle_quadtree_recycle_data( struct mulle_quadtree *tree,
                                             struct _mulle_quadtree_data *d)
 {
-   d->next           = tree->freed_datas;
-   tree->freed_datas = d;
+   _mulle_storage_free( &tree->data_storage, d);
 }
 
-
-static void   _mulle_quadtree_destroy_data( struct mulle_quadtree *tree,
-                                            struct _mulle_quadtree_data *d)
-{
-   mulle_allocator_free( tree->allocator, d);
-}
 
 /***/
 
@@ -456,8 +410,8 @@ static void
    unsigned int                    i;
 
    for( i = 0; i < level; i++)
-      fputc( ' ', fp);
-   fprintf( fp, "%u/%u: %.2f %.2f %.2f %.2f\n",
+      mulle_fputc( ' ', fp);
+   mulle_fprintf( fp, "%u/%u: %.2f %.2f %.2f %.2f\n",
                     level, quadrant,
                      node->rect.origin.x,
                      node->rect.origin.y,
@@ -477,8 +431,8 @@ static void
    while(data)
    {
       for( i = 0; i <= level; i++)
-         fputc( ' ', fp);
-      fprintf( fp, "[%.2f %.2f %.2f %.2f = %p]\n",
+         mulle_fputc( ' ', fp);
+      mulle_fprintf( fp, "[%.2f %.2f %.2f %.2f = %p]\n",
                      data->rect.origin.x,
                      data->rect.origin.y,
                      data->rect.size.width,
@@ -515,35 +469,6 @@ static void
    _mulle_quadtree_recycle_node( tree, node);
 }
 
-static void
-   _mulle_quadtree_deepdestroy_node( struct mulle_quadtree *tree,
-                                     struct _mulle_quadtree_node* node)
-{
-   struct _mulle_quadtree_data   *data;
-   struct _mulle_quadtree_data   *curr;
-   unsigned int                    i;
-
-   if( node->subnodes[0])
-   {
-     // Non-leaf node: first free subnodes..
-      for( i = 0; i < 4; i++)
-         _mulle_quadtree_deepdestroy_node( tree, node->subnodes[i]);
-   }
-
-   // Leaf nodes: free data..
-   data = node->data;
-   while( data)
-   {
-      curr = data;
-      data = data->next;
-      _mulle_quadtree_destroy_data( tree, curr);
-   }
-   //..then free this node
-   _mulle_quadtree_destroy_node( tree, node);
-}
-
-
-
 // Public functions
 struct mulle_quadtree   *mulle_quadtree_init( struct mulle_quadtree *tree,
                                             CGRect world_rect,
@@ -571,6 +496,16 @@ struct mulle_quadtree   *mulle_quadtree_alloc( struct mulle_allocator *allocator
 
    tree            = mulle_allocator_calloc( allocator, 1, sizeof( struct mulle_quadtree));
    tree->allocator = allocator;
+   _mulle_storage_init( &tree->node_storage,
+                        sizeof( struct _mulle_quadtree_node),
+                        alignof( struct _mulle_quadtree_node),
+                        64,
+                        allocator);
+   _mulle_storage_init( &tree->data_storage,
+                        sizeof( struct _mulle_quadtree_data),
+                        alignof( struct _mulle_quadtree_data),
+                        256,
+                        allocator);
    return( tree);
 }
 
@@ -599,30 +534,11 @@ void   mulle_quadtree_free( struct mulle_quadtree* tree)
 
 void   mulle_quadtree_done( struct mulle_quadtree  *tree)
 {
-   struct _mulle_quadtree_node   *n;
-   struct _mulle_quadtree_node   *n_next;
-   struct _mulle_quadtree_data   *d;
-   struct _mulle_quadtree_data   *d_next;
-
    if( ! tree)
       return;
 
-   _mulle_quadtree_deepdestroy_node( tree, tree->root_node);
-
-   // clean recycling areas
-   for( d_next = tree->freed_datas; d_next; )
-   {
-      d      = d_next;
-      d_next = d->next;
-      _mulle_quadtree_destroy_data( tree, d);
-   }
-
-   for( n_next = tree->freed_nodes; n_next; )
-   {
-      n      = n_next;
-      n_next = n->subnodes[ 0];
-      _mulle_quadtree_destroy_node( tree, n);
-   }
+   _mulle_storage_done( &tree->node_storage);
+   _mulle_storage_done( &tree->data_storage);
 }
 
 
