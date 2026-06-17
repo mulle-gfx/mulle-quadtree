@@ -3,15 +3,18 @@
    {
       description="🌴 mulle-quadtree for tracking rectangles";
       domain="github";
+      language="c";
+      dialect="c";
       name="mulle-quadtree";
       user="mulle-gfx";
       repo="mulle-quadtree";
-      homepage="https://github.com/MulleUI/mulle-quadtree/tree/mulle-quadtree.git";
-      license="UNLICENSED"
+      homepage="https://github.com/MulleUI/mulle-quadtree";
+      license="UNLICENSED";
    };
    dependencies =
    (
       {
+         description="🔭 Basic geometric types";
          domain="github";
          name="mulle-geometry";
          repo="mulle-geometry";
