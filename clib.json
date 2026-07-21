@@ -4,7 +4,7 @@
    "description" : "🌴 mulle-quadtree for tracking rectangles",
    "keywords" : [],
    "license" : "UNLICENSED",
-   "repo" : "MulleUI/mulle-quadtree",
+   "repo" : "mulle-gfx/mulle-quadtree",
    "src" : [
       "src/generic/include-private.h",
       "src/generic/include.h",
