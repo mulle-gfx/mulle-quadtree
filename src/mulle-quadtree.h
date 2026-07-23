@@ -5,7 +5,7 @@
 #ifndef mulle_quadtree_h__
 #define mulle_quadtree_h__
 
-#define MULLE__QUADTREE_VERSION  ((1 << 24) | (0 << 8) | 0)
+#define MULLE__QUADTREE_VERSION  ((1 << 20) | (0 << 8) | 1)
  
 #include "include.h"
 
