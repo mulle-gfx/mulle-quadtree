@@ -36,34 +36,41 @@ if( COLLECT_DEPENDENCY_LIBRARIES_AS_NAMES)
    list( APPEND DEPENDENCY_LIBRARIES "mulle-geometry")
 else()
    if( NOT MULLE__GEOMETRY_LIBRARY)
-      find_library( MULLE__GEOMETRY_LIBRARY NAMES
-         ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_PREFERRED_LIBRARY_SUFFIX}
-         ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${MULLE_PREFERRED_LIBRARY_SUFFIX}
-         ${MULLE_FALLBACK_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_FALLBACK_LIBRARY_SUFFIX}
-         ${MULLE_FALLBACK_LIBRARY_PREFIX}mulle-geometry${MULLE_FALLBACK_LIBRARY_SUFFIX}
-         mulle-geometry
-         NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_FIND_ROOT_PATH
-      )
-      if( NOT MULLE__GEOMETRY_LIBRARY AND NOT DEPENDENCY_IGNORE_SYSTEM_LIBARIES)
+      foreach( _TMP_MULLE__GEOMETRY_LIBRARY_TARGET mulle-geometry)
+         if( TARGET ${_TMP_MULLE__GEOMETRY_LIBRARY_TARGET})
+            set( MULLE__GEOMETRY_LIBRARY ${_TMP_MULLE__GEOMETRY_LIBRARY_TARGET})
+            break()
+         endif()
+      endforeach()
+      if( NOT MULLE__GEOMETRY_LIBRARY)
          find_library( MULLE__GEOMETRY_LIBRARY NAMES
             ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_PREFERRED_LIBRARY_SUFFIX}
             ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${MULLE_PREFERRED_LIBRARY_SUFFIX}
             ${MULLE_FALLBACK_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_FALLBACK_LIBRARY_SUFFIX}
             ${MULLE_FALLBACK_LIBRARY_PREFIX}mulle-geometry${MULLE_FALLBACK_LIBRARY_SUFFIX}
             mulle-geometry
+            NO_CMAKE_SYSTEM_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_FIND_ROOT_PATH
          )
+         if( NOT MULLE__GEOMETRY_LIBRARY AND NOT DEPENDENCY_IGNORE_SYSTEM_LIBARIES)
+            find_library( MULLE__GEOMETRY_LIBRARY NAMES
+               ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_PREFERRED_LIBRARY_SUFFIX}
+               ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${MULLE_PREFERRED_LIBRARY_SUFFIX}
+               ${MULLE_FALLBACK_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_FALLBACK_LIBRARY_SUFFIX}
+               ${MULLE_FALLBACK_LIBRARY_PREFIX}mulle-geometry${MULLE_FALLBACK_LIBRARY_SUFFIX}
+               mulle-geometry
+            )
+         endif()
       endif()
       message( STATUS "MULLE__GEOMETRY_LIBRARY is ${MULLE__GEOMETRY_LIBRARY}")
-      #
-      # The order looks ascending, but due to the way this file is read
-      # it ends up being descending, which is what we need.
-      #
-      if( MULLE__GEOMETRY_LIBRARY)
+   endif()
+   if( MULLE__GEOMETRY_LIBRARY)
          #
          # Add MULLE__GEOMETRY_LIBRARY to DEPENDENCY_LIBRARIES list.
          # Disable with: `mulle-sourcetree mark mulle-geometry no-cmake-add`
          #
-         list( APPEND DEPENDENCY_LIBRARIES ${MULLE__GEOMETRY_LIBRARY})
+         if( NOT ${MULLE__GEOMETRY_LIBRARY} IN_LIST DEPENDENCY_LIBRARIES)
+            list( APPEND DEPENDENCY_LIBRARIES ${MULLE__GEOMETRY_LIBRARY})
+         endif()
          #
          # Inherit information from dependency.
          # Encompasses: no-cmake-searchpath,no-cmake-dependency,no-cmake-loader
@@ -106,13 +113,12 @@ else()
                message( STATUS "${_TMP_MULLE__GEOMETRY_DIR} not found")
             endif()
          endforeach()
-      else()
-         # Disable with: `mulle-sourcetree mark mulle-geometry no-require-link`
-         message( SEND_ERROR "MULLE__GEOMETRY_LIBRARY was not found in ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_PREFERRED_LIBRARY_SUFFIX}
+   else()
+      # Disable with: `mulle-sourcetree mark mulle-geometry no-require-link`
+      message( SEND_ERROR "MULLE__GEOMETRY_LIBRARY was not found in ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_PREFERRED_LIBRARY_SUFFIX}
 ${MULLE_PREFERRED_LIBRARY_PREFIX}mulle-geometry${MULLE_PREFERRED_LIBRARY_SUFFIX}
 ${MULLE_FALLBACK_LIBRARY_PREFIX}mulle-geometry${CMAKE_DEBUG_POSTFIX}${MULLE_FALLBACK_LIBRARY_SUFFIX}
 ${MULLE_FALLBACK_LIBRARY_PREFIX}mulle-geometry${MULLE_FALLBACK_LIBRARY_SUFFIX}
 mulle-geometry")
-      endif()
    endif()
 endif()

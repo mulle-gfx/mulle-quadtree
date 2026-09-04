@@ -1,3 +1,37 @@
+//
+//  mulle-quadtree.c
+//  mulle-quadtree
+//
+//  Copyright (c) 2021 Nat! - Mulle kybernetiK.
+//  All rights reserved.
+//
+//
+//  Redistribution and use in source and binary forms, with or without
+//  modification, are permitted provided that the following conditions are met:
+//
+//  Redistributions of source code must retain the above copyright notice, this
+//  list of conditions and the following disclaimer.
+//
+//  Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation
+//  and/or other materials provided with the distribution.
+//
+//  Neither the name of Mulle kybernetiK nor the names of its contributors
+//  may be used to endorse or promote products derived from this software
+//  without specific prior written permission.
+//
+//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+//  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+//  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+//  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+//  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+//  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+//  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+//  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+//  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+//  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+//  POSSIBILITY OF SUCH DAMAGE.
+//
 // Kvad - a C99 quadtree implementation
 // http://github.com/appscape/kvad
 
@@ -37,9 +71,10 @@ struct mulle_quadtree
 
 
 
-struct _mulle_quadtree_node   *_mulle_quadtree_create_node( struct mulle_quadtree *tree,
-                                                            CGRect rect,
-                                                            unsigned int level)
+static struct _mulle_quadtree_node   *
+   _mulle_quadtree_create_node( struct mulle_quadtree *tree,
+                                CGRect rect,
+                                unsigned int level)
 {
    struct _mulle_quadtree_node   *n;
 
@@ -59,7 +94,8 @@ static inline void   _mulle_quadtree_recycle_node( struct mulle_quadtree *tree,
 
 /***/
 
-struct _mulle_quadtree_data   *_mulle_quadtree_create_data( struct mulle_quadtree *tree)
+static struct _mulle_quadtree_data   *
+   _mulle_quadtree_create_data( struct mulle_quadtree *tree)
 {
    struct _mulle_quadtree_data   *d;
 
@@ -175,6 +211,57 @@ static unsigned int
     return count;
 }
 
+static unsigned int
+   _mulle_quadtree_node_remove_by_payload( struct _mulle_quadtree_node* node,
+                                           void* payload,
+                                           struct mulle_quadtree *tree)
+{
+   unsigned int                  count;
+   struct _mulle_quadtree_data   *data;
+   struct _mulle_quadtree_data   *prev_data;
+   unsigned int                  i;
+
+   count = 0;
+
+   if( node->subnodes[0])
+   {
+      for( i = 0; i < 4; i++)
+         count += _mulle_quadtree_node_remove_by_payload( node->subnodes[ i], payload, tree);
+      return( count);
+   }
+
+   data      = node->data;
+   prev_data = NULL;
+
+   while( data)
+   {
+      if( data->payload == payload)
+      {
+         count++;
+         node->data_count--;
+         if( prev_data)
+         {
+            prev_data->next = data->next;
+            _mulle_quadtree_recycle_data( tree, data);
+            data = prev_data->next;
+         }
+         else
+         {
+            node->data = data->next;
+            _mulle_quadtree_recycle_data( tree, data);
+            data = node->data;
+         }
+      }
+      else
+      {
+         prev_data = data;
+         data = data->next;
+      }
+   }
+
+   return( count);
+}
+
 static int  _mulle_quadtree_node_insert( struct mulle_quadtree* tree,
                                          struct _mulle_quadtree_node* node,
                                          CGRect rect,
@@ -188,8 +275,10 @@ static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree,
    CGRect                        subnode_rect;
    struct _mulle_quadtree_data   *data;
    struct _mulle_quadtree_data   *next;
+   struct _mulle_quadtree_data   *reversed;
    struct _mulle_quadtree_node   *subnode;
    unsigned int                  i;
+   unsigned int                  covers_all;
 
    subnode_rect_size = CGSizeMake( node->rect.size.width / 2.0,
                                    node->rect.size.height / 2.0);
@@ -203,10 +292,56 @@ static void  _mulle_quadtree_split_node( struct mulle_quadtree* tree,
        node->subnodes[i] = _mulle_quadtree_create_node( tree, subnode_rect, node->level + 1);
    }
 
-   // ..and move all data from it into subnodes
+   // If every entry would land in all four children, splitting does not
+   // separate anything and just causes 4x blowup.  Refuse to split.
+   covers_all = 0;
+   data       = node->data;
+   while( data)
+   {
+      for( i = 0; i < 4; i++)
+      {
+         if( ! CGRectIntersectsRect( data->rect, node->subnodes[ i]->rect))
+            break;
+      }
+      if( i == 4)
+         covers_all++;
+      else
+         break;  // at least one entry does not cover all children, split is useful
+      data = data->next;
+   }
+
+   if( covers_all == node->data_count)
+   {
+      // undo: recycle created subnodes, keep node as leaf
+      for( i = 0; i < 4; i++)
+      {
+         _mulle_quadtree_recycle_node( tree, node->subnodes[ i]);
+         node->subnodes[ i] = NULL;
+      }
+      return;
+   }
+
+   //
+   // ..and move all data from it into subnodes.
+   //
+   // The node list is ordered newest first, because _mulle_quadtree_node_insert
+   // prepends. Since it also prepends into the subnodes, we must feed the
+   // entries oldest first, otherwise the subnode lists come out reversed and
+   // the z-order guarantee breaks. So reverse the detached list first.
+   //
    data       = node->data;
    node->data = NULL;
 
+   reversed = NULL;
+   while( data)
+   {
+      next       = data->next;
+      data->next = reversed;
+      reversed   = data;
+      data       = next;
+   }
+
+   data = reversed;
    while( data)
    {
       next = data->next;
@@ -570,6 +705,10 @@ int   mulle_quadtree_insert( struct mulle_quadtree *tree,
    if( ! tree)
       return( -1);
 
+   rect = CGRectStandardize( rect);
+   if( CGRectIsEmpty( rect))
+      return( 0);
+
    return( _mulle_quadtree_node_insert( tree, tree->root_node, rect, payload));
 }
 
@@ -581,7 +720,18 @@ unsigned int   mulle_quadtree_remove_payload( struct mulle_quadtree* tree,
    if( ! tree)
       return( 0);
 
-    return _mulle_quadtree_node_remove_payload(tree->root_node, rect, payload, tree);
+   rect = CGRectStandardize( rect);
+   return( _mulle_quadtree_node_remove_payload( tree->root_node, rect, payload, tree));
+}
+
+
+unsigned int   mulle_quadtree_remove_by_payload( struct mulle_quadtree* tree,
+                                                 void *payload)
+{
+   if( ! tree)
+      return( 0);
+
+   return( _mulle_quadtree_node_remove_by_payload( tree->root_node, payload, tree));
 }
 
 
@@ -593,7 +743,8 @@ unsigned int   mulle_quadtree_change_payload( struct mulle_quadtree* tree,
    if( ! tree)
       return( 0);
 
-   return _mulle_quadtree_node_change_payload( tree->root_node, rect, payload, newpayload);
+   rect = CGRectStandardize( rect);
+   return( _mulle_quadtree_node_change_payload( tree->root_node, rect, payload, newpayload));
 }
 
 
@@ -617,14 +768,18 @@ unsigned int   mulle_quadtree_find_intersecting_rect( struct mulle_quadtree *tre
    if( ! tree)
       return( 0);
 
-    return _mulle_quadtree_node_find_intersecting_rect( tree->root_node, r, callback, context);
+   r = CGRectStandardize( r);
+   return( _mulle_quadtree_node_find_intersecting_rect( tree->root_node, r, callback, context));
 }
 
 
-static void   mulle_quadtree_dummy_callback( CGRect rect, 
-                                             void *payload, 
+static void   mulle_quadtree_dummy_callback( CGRect rect,
+                                             void *payload,
                                              void *context)
 {
+   (void) rect;
+   (void) payload;
+   (void) context;
 }
 
 

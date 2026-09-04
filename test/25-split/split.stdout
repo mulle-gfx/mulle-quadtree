@@ -1,0 +1,18 @@
+count: 3
+found: A
+hits at (15,15): 1
+found: B
+hits at (65,65): 1
+found: C
+hits at (85,85): 1
+hits at (5,5): 0
+count after D: 7
+found: D
+hits at (45,45): 1
+found: D
+hits at (55,55): 1
+found: E
+hits at (25,25) for E: 1
+found: E
+found: D
+z-order at (45,45): 2

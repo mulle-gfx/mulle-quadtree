@@ -22,6 +22,39 @@ MIT as well.
 
 
 
+## Documentation & Guides
+
+* [API Summary](asset/dox/api/toc)
+
+## Usage
+
+Feed rectangles with payloads into the tree, then hit test a point. This is
+how "mouse over" (tracking rectangles) is implemented:
+
+``` c
+#include <mulle-quadtree/mulle-quadtree.h>
+
+static void  hit( CGRect rect, void *payload, void *context)
+{
+   (void) rect;
+   (void) context;
+   printf( "mouse over: %s\n", (char *) payload);
+}
+
+int  main( void)
+{
+   struct mulle_quadtree  *tree =
+      mulle_quadtree_create( CGRectMake( 0, 0, 800, 600), 3, 100, NULL);
+
+   mulle_quadtree_insert( tree, CGRectMake(  10,  10, 200, 100), "left window");
+   mulle_quadtree_insert( tree, CGRectMake( 500, 300, 200, 200), "right window");
+
+   mulle_quadtree_find_point( tree, CGPointMake( 150, 50), hit, NULL);
+
+   mulle_quadtree_destroy( tree);
+   return( 0);
+}
+```
 
 
 ### You are here

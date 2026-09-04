@@ -37,6 +37,7 @@ set( PUBLIC_GENERATED_HEADERS
 src/reflect/_mulle-quadtree-include.h
 src/reflect/_mulle-quadtree-include-public.h
 src/reflect/_mulle-quadtree-provide.h
+src/reflect/_mulle-quadtree-versioncheck.h
 )
 
 #

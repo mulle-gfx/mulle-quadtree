@@ -43,7 +43,7 @@ static void   lighten_layer( CGRect rect, void *payload, void *context)
 
 
 // brute force, instead of quadtree
-static void  layers_find_intersecting_rect( struct mulle_pointerarray *layers,
+static __attribute__((unused)) void  layers_find_intersecting_rect( struct mulle_pointerarray *layers,
                                             CGRect rect,
                                             mulle_quadtree_callback callback,
                                             void *userinfo)
@@ -67,7 +67,6 @@ static void  layers_find_intersecting_rect( struct mulle_pointerarray *layers,
 //
 - (UIEvent  *) acceptMouseMotionEvent:(UIMouseMotionEvent *) event
 {
-   UIWindow        *window;
    UIView          *contentView;
    CGPoint         point;
    CGPoint         pointOnCircle;

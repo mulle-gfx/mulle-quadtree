@@ -10,6 +10,7 @@
       repo="mulle-quadtree";
       homepage="https://github.com/MulleUI/mulle-quadtree";
       license="UNLICENSED";
+      version="1.1.0";
    };
    dependencies =
    (

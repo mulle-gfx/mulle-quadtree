@@ -2,3 +2,8 @@ before remove: 3
 removed: 1
 after remove: 2
 removed again: 0
+before remove_by_payload: 10
+removed by payload: 7
+after remove_by_payload: 3
+find W at (50,50): 0
+find X at (15,15): 1

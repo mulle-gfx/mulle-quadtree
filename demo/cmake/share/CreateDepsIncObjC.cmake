@@ -20,7 +20,11 @@ if( NOT LIBRARY_NAME)
 endif()
 
 if( NOT OBJC_DEPS_INC)
-   set( OBJC_DEPS_INC "${CMAKE_CURRENT_SOURCE_DIR}/src/reflect/objc-deps.inc")
+   if( MULLE_SDE_REFLECT_DIR)
+      set( OBJC_DEPS_INC "${CMAKE_CURRENT_SOURCE_DIR}/src/${MULLE_SDE_REFLECT_DIR}/objc-deps.inc")
+   else()
+      set( OBJC_DEPS_INC "${CMAKE_CURRENT_SOURCE_DIR}/src/reflect/objc-deps.inc")
+   endif()
 endif()
 
 #
@@ -67,11 +71,11 @@ if( CREATE_OBJC_DEPS_INC)
 #   )
    message( STATUS "OBJC_DEPS_INC is \"${OBJC_DEPS_INC}\"")
 
-   if( INHERITED_OBJC_DEPSS)
-     list( REMOVE_DUPLICATES INHERITED_OBJC_DEPSS)
+   if( INHERITED_OBJC_DEPS)
+     list( REMOVE_DUPLICATES INHERITED_OBJC_DEPS)
    endif()
 
-   message( STATUS "INHERITED_OBJC_DEPSS is \"${INHERITED_OBJC_DEPSS}\"")
+   message( STATUS "INHERITED_OBJC_DEPS is \"${INHERITED_OBJC_DEPS}\"")
 
 
    # The preferred way:
@@ -135,7 +139,7 @@ if( CREATE_OBJC_DEPS_INC)
                  -c "${CMAKE_BUILD_TYPE}"
                  -o "${OBJC_DEPS_INC}"
                  ${OBJC_DEPS_LIBRARY}
-                 ${INHERITED_OBJC_DEPSS}
+                 ${INHERITED_OBJC_DEPS}
       DEPENDS ${OBJC_DEPS_LIBRARY}
               ${ALL_LOAD_DEPENDENCY_LIBRARIES}
       COMMENT "Create: ${OBJC_DEPS_INC}"

@@ -1,0 +1,13 @@
+## Performance
+
+The quadtree outperforms a linear array scan at every tested size (10000
+random point queries, 1024×768 world, rects sized 20–100px):
+
+| Rects | Array (full scan) | Quadtree | Speedup |
+|------:|------------------:|---------:|--------:|
+|    50 |           3.50 ms |  1.83 ms |     1.9×|
+|   200 |          17.09 ms |  3.07 ms |     5.6×|
+|  1000 |          94.91 ms |  5.04 ms |    18.8×|
+|  5000 |         471.39 ms | 12.00 ms |    39.3×|
+
+See `research/` for the benchmark source and full results.
