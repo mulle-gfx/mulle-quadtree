@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.15)
 
-project( mulle-quadtree VERSION 1.1.0 LANGUAGES C)
+project( mulle-quadtree VERSION 1.1.1 LANGUAGES C)
 
 #
 # Turn a "Library" into an "Executable"
@@ -55,8 +55,8 @@ endif()
 include( InstallLibrary)
 
 if( LINK_PHASE)
-   include( InstallCMakeInclude)
-   include( InstallCMakePackage)
+   include( AddSubdirectorySupport)
+   include( FindPackageSupport)
 endif()
    
 include( FinalOutput OPTIONAL)

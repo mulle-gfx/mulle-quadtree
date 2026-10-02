@@ -39,7 +39,7 @@
 #ifndef mulle_quadtree_h__
 #define mulle_quadtree_h__
 
-#define MULLE__QUADTREE_VERSION  ((1UL << 20) | (1 << 8) | 0)
+#define MULLE__QUADTREE_VERSION  ((1UL << 20) | (1 << 8) | 1)
  
 #include "include.h"
 
