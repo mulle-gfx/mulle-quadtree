@@ -1,1 +1,1 @@
-mulle-quadtree;${MULLE__QUADTREE_NODETYPE:-tar};;7FF9A0E6-6AD2-404F-B0B5-8AD6891F96AC;${MULLE__QUADTREE_URL:-https://github.com/mulle-gfx/mulle-quadtree/archive/${MULLE_TAG}.tar.gz};${MULLE__QUADTREE_BRANCH};${MULLE__QUADTREE_TAG:-latest};;
+mulle-quadtree;${MULLE__QUADTREE_NODETYPE:-tar};;76F67812-9EF8-43A2-AED9-E6973AB66FBF;${MULLE__QUADTREE_URL:-https://github.com/nat/mulle-quadtree/archive/${MULLE_TAG}.tar.gz};${MULLE__QUADTREE_BRANCH};${MULLE__QUADTREE_TAG:-latest};;
